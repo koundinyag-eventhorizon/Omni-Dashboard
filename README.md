@@ -14,7 +14,24 @@ Welcome to the edge of personal productivity. Omni-Dashboard provides an all-in-
 
 ---
 
-## ⚡ 5-Minute Quick Start Guide
+## 📦 Precompiled Binaries & Official Releases
+
+If you don't want to install Node.js, Rust, or compile from source, standalone precompiled packages for **Windows** and **Linux** are available directly on the [**GitHub Releases**](https://github.com/Koundinya-Git/omni-dashboard/releases) page:
+
+| Operating System | Package Format | Installation / Execution Instructions |
+| :--- | :--- | :--- |
+| **Linux (Universal)** | `.AppImage` | Download `omni-dashboard.AppImage`, make it executable (`chmod +x omni-dashboard.AppImage`), and run! |
+| **Linux (Debian / Ubuntu / Mint)** | `.deb` | Download `omni-dashboard.deb` and install via `sudo dpkg -i omni-dashboard.deb`. |
+| **Linux (Arch Linux / Standalone)** | Binary (`omni-dashboard`) | Download the standalone executable, `chmod +x omni-dashboard`, and execute `./omni-dashboard`. |
+| **Windows (Installer)** | `.msi` / `.exe` | Download `omni-dashboard-setup.exe` or `.msi`, double-click, and follow the standard installer wizard. |
+| **Windows (Portable)** | `.zip` | Download and extract portable standalone executable to run directly without admin privileges. |
+
+> [!NOTE]
+> Regardless of whether you download a precompiled release or compile from source, both **Windows** and **Linux** versions originate from this exact same unified codebase. You only need a running [Ollama](https://ollama.com/) instance on your computer with your chosen models!
+
+---
+
+## ⚡ 5-Minute Quick Start Guide (Building from Source)
 
 Get Omni-Dashboard up and running on your machine in three simple steps:
 
