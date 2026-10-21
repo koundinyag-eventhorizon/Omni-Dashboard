@@ -1,8 +1,54 @@
 # Omni-Dashboard (Omni-Core)
 
+[![Platform: Linux](https://img.shields.io/badge/Platform-Linux%20(X11%20%7C%20Wayland)-FCC624?logo=linux&logoColor=black)](https://github.com/Koundinya-Git/omni-dashboard)
+[![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6?logo=windows&logoColor=white)](https://github.com/Koundinya-Git/omni-dashboard)
+[![Framework: Tauri v2](https://img.shields.io/badge/Framework-Tauri%20v2-24C8DB?logo=tauri&logoColor=white)](https://v2.tauri.app/)
+[![Backend: Rust](https://img.shields.io/badge/Backend-Rust%202021-DEA584?logo=rust&logoColor=black)](https://www.rust-lang.org/)
+[![Frontend: React + Vite](https://img.shields.io/badge/Frontend-React%2018%20%2B%20Vite%205-61DAFB?logo=react&logoColor=black)](https://vitejs.dev/)
+[![Local AI: Ollama](https://img.shields.io/badge/Local%20AI-Ollama-black?logo=ollama&logoColor=white)](https://ollama.com/)
+[![License: GPLv3](https://img.shields.io/badge/License-GPLv3%20%2B%20%C2%A77-blue.svg)](LICENSE.md)
+
 > **An autonomous, cross-platform (Linux & Windows), local-first productivity ecosystem and intelligent desktop assistant. Featuring real-time behavioral telemetry, strict data sovereignty, dedicated GPU acceleration, and a live memory database designed for sustained focus and deep work.**
 
 Welcome to the edge of personal productivity. Omni-Dashboard provides an all-in-one, completely offline workspace that replaces fragmented, cloud-dependent SaaS subscriptions with an ultra-responsive desktop application. Built with **Tauri v2** and a **Rust** Tokio core, it pairs a local embedded SQLite database with local Large Language Models (LLMs) served through **Ollama**—ensuring that every task, note, document, and chat remains strictly on your device.
+
+---
+
+## ⚡ 5-Minute Quick Start Guide
+
+Get Omni-Dashboard up and running on your machine in three simple steps:
+
+### 🐧 For Linux (Arch Linux / Ubuntu / Debian / Fedora)
+```bash
+# 1. Clone repository & install dependencies
+git clone https://github.com/Koundinya-Git/omni-dashboard.git && cd omni-dashboard
+
+# On Arch Linux:
+sudo pacman -S --needed base-devel webkit2gtk-4.1 gtk3 libsoup3 libappindicator-gtk3 gst-libav ffmpeg yt-dlp grim scrot ollama-cuda nodejs npm git-lfs
+
+# 2. Start Ollama and download the base conversational model
+ollama serve &
+ollama pull llama3.2:3b
+
+# 3. Install web packages and run!
+npm install
+npm run tauri dev
+```
+
+### 🪟 For Windows (Windows 10 / 11 PowerShell)
+```powershell
+# 1. Install prerequisites via winget & clone repository
+winget install Gyan.FFmpeg yt-dlp.yt-dlp Ollama.Ollama OpenJS.NodeJS.LTS
+git clone https://github.com/Koundinya-Git/omni-dashboard.git; cd omni-dashboard
+
+# 2. Start Ollama and download the base conversational model
+ollama serve
+ollama pull llama3.2:3b
+
+# 3. Install web packages and run!
+npm install
+npm run tauri dev
+```
 
 ---
 
@@ -46,6 +92,9 @@ Modern productivity tools are increasingly fragmented, locked behind monthly sub
    - [8.5 Development & Hybrid GPU Execution](#85-development--hybrid-gpu-execution)
    - [8.6 Production Release Packaging](#86-production-release-packaging)
 9. [Troubleshooting & Operational Notes](#9-troubleshooting--operational-notes)
+   - [9.1 Windows-Specific Troubleshooting](#91-windows-specific-troubleshooting)
+   - [9.2 Linux-Specific Troubleshooting](#92-linux-specific-troubleshooting)
+   - [9.3 General & AI Diagnostics](#93-general--ai-diagnostics)
 10. [Application Showcase & Gallery](#10-application-showcase--gallery)
 11. [License & Terms of Use](#11-license--terms-of-use)
 
@@ -54,6 +103,29 @@ Modern productivity tools are increasingly fragmented, locked behind monthly sub
 ## 1. 🔀 Cross-Platform Architecture & Guidelines
 
 Omni-Dashboard is engineered as a **single, unified codebase** that runs natively on both **Linux** (supporting Wayland and X11 display servers) and **Windows** (10 and 11) without source-level conflicts or code forks.
+
+```text
+omni-dashboard/
+├── src/                                  # 100% OS-Agnostic React + TypeScript Frontend
+│   ├── components/                       # Dashboard widgets, Timetable, Chat, Flashcards
+│   ├── lib/                              # Tauri IPC bridge wrappers (tauriIPC.ts)
+│   └── App.tsx                           # Main HUD, router, telemetry & Danger Zone UI
+├── src-tauri/                            # Rust Core Backend
+│   ├── src/
+│   │   ├── capture/
+│   │   │   └── accessibility.rs          # Dual-Engine Observer (Win32 COM / Linux X11+Wayland)
+│   │   ├── main.rs                       # IPC commands, screen grab, audio loopback, GPU telemetry
+│   │   └── ...
+│   ├── piper/                            # Neural Speech Synthesis
+│   │   ├── piper/
+│   │   │   ├── piper                     # Linux ELF binary
+│   │   │   └── piper.exe                 # Windows PE executable
+│   │   └── voices/                       # 10 ONNX neural voice models & configs (.onnx / .json)
+│   ├── Cargo.toml                        # Dual-target compilation ([target.'cfg(windows)'.dependencies])
+│   └── tauri.conf.json                   # Multi-target bundling (.AppImage, .deb, .msi, .exe)
+├── package.json                          # Frontend NPM dependencies & scripts
+└── vite.config.ts                        # Vite & Tailwind CSS v4 compiler config
+```
 
 ### 1.1 Comparative Implementation Matrix
 
@@ -247,10 +319,10 @@ The Retrieval-Augmented Generation (RAG) module provides document analysis direc
 ---
 
 ### 4.3 Hardware Telemetry, GPU Acceleration & Adaptive VRAM Management
-Running LLMs on personal laptops requires precise resource budgeting to avoid thermal throttling, out-of-memory errors, and sluggish inferencing.
+Running LLMs on personal laptops requires precise resource budgeting to avoid thermal throttling, out-of-memory errors, and sluggish inferencing across both Windows and Linux.
 
-* **Dual-Engine System Diagnostics:** The Rust daemon queries system RAM via `sysinfo` and dedicated GPU parameters via `nvidia-smi`. The dashboard displays real-time CPU usage, system RAM, GPU compute utilization, and active VRAM allocation.
-* **Low-VRAM Adaptive Context Clamping:** On entry-level discrete GPUs (such as the **NVIDIA GeForce MX450 2GB GDDR6, TU117 architecture**), large context windows (e.g., 16,384 tokens) cause the KV cache to exceed available VRAM, forcing Ollama into slow CPU fallback mode. Omni-Core automatically detects GPUs with $\le$ 3GB VRAM and caps `num_ctx` to **4096 tokens**. This guarantees that 100% of the model layers and KV cache remain in VRAM, delivering 4–5$\times$ faster generation.
+* **Dual-Engine System Diagnostics:** The Rust daemon queries system RAM via `sysinfo` and dedicated GPU parameters via `nvidia-smi` (available out of the box with NVIDIA Windows drivers and on Linux). The dashboard displays real-time CPU usage, system RAM, GPU compute utilization, and active VRAM allocation.
+* **Low-VRAM Adaptive Context Clamping:** On entry-level discrete GPUs (such as the **NVIDIA GeForce MX450 2GB GDDR6, TU117 architecture**, or GTX 1050 2GB/3GB), large context windows (e.g., 16,384 tokens) cause the KV cache to exceed available VRAM, forcing Ollama into slow CPU fallback mode. Omni-Core automatically detects GPUs with $\le$ 3GB VRAM on both Windows and Linux and caps `num_ctx` to **4096 tokens**. This guarantees that 100% of the model layers and KV cache remain in VRAM, delivering 4–5$\times$ faster generation.
 * **Dynamic VRAM Purging:** When switching personas or tasks (e.g., transitioning from general chat on `llama3.2` to code generation on `qwen2.5-coder`), Omni-Core invokes `flush_vram`, dispatching an eviction payload (`keep_alive: 0`) to release previously loaded model weights from graphics memory.
 
 ---
@@ -276,7 +348,7 @@ Built to maintain accountability, the background observer tracks active applicat
 ### 4.6 Study & Focus Automation
 * **Auto-Flashcard Generation:** Automatically extracts key concepts from study notes and textbook chapters, generating spaced-repetition flashcard decks.
 * **One-Click Note Summaries:** Formats lecture notes and study documents into executive summaries and action items using local models.
-* **Meeting Transcription Pipeline:** Captures system audio loopback for offline speech-to-text processing.
+* **Meeting Transcription Pipeline:** Captures system audio loopback for offline speech-to-text processing (via DirectShow Stereo Mix on Windows or PulseAudio loopback on Linux).
 
 ---
 
@@ -529,7 +601,7 @@ invoke("delete_task", { id: string }): Promise<void>;
 // Timetable / Calendar
 invoke("add_calendar_event", {
   id: string; title: string; description: string; start_time: number;
-  end_time: number; event_type: string; tags: string[]; color: string; is_all_day: boolean;
+  end_time: number; event_type: string; tags: string[], color: string, is_all_day: boolean;
 }): Promise<void>;
 invoke("get_calendar_events_in_range", { start: number; end: number }): Promise<CalendarEventItem[]>;
 invoke("delete_calendar_event", { id: string }): Promise<void>;
@@ -552,12 +624,10 @@ invoke("download_yt_song", { videoId: string; title: string; artist: string; dur
 
 ## 8. ⚙️ Comprehensive Setup & Installation Protocol
 
-Follow the setup instructions corresponding to your operating system.
-
 ### 8.1 Linux Setup
 
 #### Arch Linux
-Install the necessary development libraries, WebKitGTK, GStreamer, audio backends, and utilities:
+Install core development libraries, WebKitGTK, GStreamer, and media utilities:
 ```bash
 sudo pacman -S --needed \
   base-devel \
@@ -582,13 +652,13 @@ sudo pacman -S --needed \
   git-lfs
 ```
 
-##### NVIDIA dGPU Acceleration (CUDA for Ollama):
+##### NVIDIA dGPU Acceleration (CUDA for Ollama on Arch):
 To ensure Ollama executes model inference on your discrete NVIDIA GPU:
 ```bash
 sudo pacman -S ollama-cuda nvidia-prime
 ```
 > [!TIP]
-> On Arch Linux, install `ollama-cuda` instead of the generic `ollama` package to enable CUDA acceleration.
+> On Arch Linux, install `ollama-cuda` instead of generic `ollama` so Ollama properly delegates tensors to CUDA!
 
 #### Ubuntu / Debian (22.04 LTS+)
 ```bash
@@ -613,22 +683,56 @@ sudo apt-get update && sudo apt-get install -y \
   git-lfs
 ```
 
+#### Fedora (39+)
+```bash
+sudo dnf groupinstall "Development Tools" && sudo dnf install -y \
+  webkit2gtk4.1-devel \
+  gtk3-devel \
+  libsoup3-devel \
+  libappindicator-gtk3-devel \
+  gstreamer1-devel \
+  gstreamer1-plugins-base-devel \
+  gstreamer1-plugins-good \
+  gstreamer1-plugins-bad-free \
+  gstreamer1-libav \
+  openssl-devel \
+  ffmpeg \
+  yt-dlp \
+  grim \
+  scrot \
+  nodejs \
+  npm \
+  git-lfs
+```
+
 ---
 
 ### 8.2 Windows Setup
 
-1. **Node.js:** Install Node.js 18 or higher from [nodejs.org](https://nodejs.org/).
-2. **Rust Toolchain:** Install via `rustup` using the MSVC ABI:
-   ```powershell
-   rustup default stable-x86_64-pc-windows-msvc
-   ```
-3. **Visual Studio C++ Build Tools:** Install Visual Studio Build Tools 2022 with the **Desktop development with C++** workload enabled.
-4. **FFmpeg & yt-dlp:** Install via `winget` or `choco` and ensure they are accessible in your system `PATH`:
-   ```powershell
-   winget install Gyan.FFmpeg
-   winget install yt-dlp.yt-dlp
-   ```
-5. **Git LFS:** Run `git lfs install` in your terminal.
+Omni-Dashboard builds cleanly using standard Microsoft C++ and Node.js developer tools.
+
+#### 1. Quick One-Line Package Installation
+Run in an **Administrator PowerShell** session:
+```powershell
+winget install OpenJS.NodeJS.LTS Gyan.FFmpeg yt-dlp.yt-dlp Ollama.Ollama Git.Git
+```
+
+#### 2. Rust Toolchain Setup
+Install Rust via `rustup` configured for the native MSVC toolchain:
+```powershell
+winget install Rustlang.Rustup
+rustup default stable-x86_64-pc-windows-msvc
+```
+
+#### 3. Visual Studio C++ Build Tools
+* Install the **Visual Studio 2022 Build Tools** (or full Visual Studio 2022).
+* Ensure the **Desktop development with C++** workload is checked (strictly required for Rust `cc` and audio engine compilation).
+
+#### 4. Enable Audio Loopback for Meeting Capture (Optional)
+To enable automated meeting audio capture on Windows:
+1. Open the Windows Run dialog (`Win + R`), type `mmsys.cpl`, and hit Enter.
+2. Select the **Recording** tab.
+3. If **Stereo Mix** is disabled or hidden, right-click an empty space, check **Show Disabled Devices**, right-click **Stereo Mix**, and choose **Enable**.
 
 ---
 
@@ -660,7 +764,7 @@ ollama pull nomic-embed-text
 ```
 
 > [!NOTE]
-> On laptops with $\le$ 3GB VRAM (such as the GeForce MX450 2GB), Omni-Dashboard automatically adjusts the context window to `4096` tokens to prevent model weights from falling back to CPU memory.
+> On laptops with $\le$ 3GB VRAM (such as the GeForce MX450 2GB), Omni-Dashboard automatically adjusts the context window to `4096` tokens on both Windows and Linux to prevent model weights from falling back to CPU memory.
 
 ---
 
@@ -679,7 +783,8 @@ src-tauri/
         ├── en_US-bryce-medium.onnx
         └── ... (.json config files alongside .onnx)
 ```
-On Linux, Piper can also be installed system-wide or symlinked directly into your `$PATH`.
+* **On Linux:** Ensure execution permissions: `chmod +x src-tauri/piper/piper/piper` (or install piper via package manager).
+* **On Windows:** Ensure `src-tauri/piper/piper/piper.exe` is present.
 
 ---
 
@@ -696,11 +801,11 @@ npm install
 ```
 
 #### Running on Dual-GPU / Optimus Laptops:
-* **Recommended Workflow:** Run development mode normally:
+* **Recommended Workflow (Both Windows & Linux):**
   ```bash
   npm run tauri dev
   ```
-  The Tauri WebKitGTK/WebView2 interface renders smoothly on your battery-efficient integrated GPU, while Ollama utilizes 100% of your dedicated NVIDIA GPU for inference.
+  The Tauri interface renders smoothly on your battery-efficient integrated GPU (Intel/AMD), while Ollama utilizes 100% of your dedicated NVIDIA GPU for inference.
 * **Running with PRIME Render Offload (`prime-run` on Linux):**
   ```bash
   prime-run npm run tauri dev
@@ -711,7 +816,7 @@ npm install
 
 ### 8.6 Production Release Packaging
 
-To compile release binaries:
+To compile standalone desktop release packages:
 
 #### Linux:
 ```bash
@@ -723,29 +828,57 @@ Generates `.AppImage` and `.deb` packages in `src-tauri/target/release/bundle/`.
 ```powershell
 npm run tauri build
 ```
-Generates `.msi` and `.exe` standalone installers in `src-tauri\target\release\bundle\`.
+Generates standalone `.msi` and `.exe` installers in `src-tauri\target\release\bundle\`.
 
 ---
 
 ## 9. 🛠️ Troubleshooting & Operational Notes
 
-### Ollama Not Utilizing NVIDIA GPU (Arch Linux)
-* **Symptom:** Text generation is slow; `nvidia-smi` displays 0MB allocated by `ollama_llama_server`.
-* **Fix:** Install the CUDA-enabled build via `sudo pacman -S ollama-cuda`, then restart the daemon: `sudo systemctl restart ollama` or `ollama serve`.
+### 9.1 Windows-Specific Troubleshooting
 
-### WebKitGTK Protocol Error 71 on Wayland
-* **Symptom:** App crashes on startup with `Gdk-Message: Error 71 (Protocol error) dispatching to Wayland display`.
-* **Fix:** Occurs when running WebKitGTK under Wayland with NVIDIA DMA-BUF hardware acceleration. Omni-Dashboard contains a built-in guard, or you can export manually:
-  ```bash
-  export WEBKIT_DISABLE_DMABUF_RENDERER=1
-  npm run tauri dev
-  ```
+* **`link.exe not found` or `fatal error C1083` During Build:**
+  * *Cause:* The MSVC C++ Build Tools workload was omitted during Visual Studio installation.
+  * *Fix:* Open the Visual Studio Installer $\to$ Click **Modify** $\to$ Check **Desktop development with C++** $\to$ Install and restart your terminal.
+* **Meeting Capture Error (`audio=Stereo Mix` not found):**
+  * *Cause:* Windows audio drivers often disable Stereo Mix by default.
+  * *Fix:* Press `Win + R`, run `mmsys.cpl`, open the **Recording** tab, right-click **Stereo Mix**, and click **Enable**.
+* **PowerShell Execution Policy Error During Screen Capture:**
+  * *Fix:* Open PowerShell as Administrator and run:
+    ```powershell
+    Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+    ```
 
-### Music Player Download or Playback Failure
-* **Fix:** Ensure both `yt-dlp` and `ffmpeg` are in your system `$PATH`. On Linux, verify that all GStreamer plugins (`gst-plugins-base`, `gst-plugins-good`, `gst-plugins-bad`, `gst-libav`) and `pipewire-pulse` are installed.
+### 9.2 Linux-Specific Troubleshooting
 
-### Screen Capture Permissions on Wayland
-* **Fix:** Install `grim` (`sudo pacman -S grim`) for native Wayland compositor screenshotting. On X11 sessions, install `scrot` or `imagemagick`.
+* **Ollama Running on CPU Instead of NVIDIA dGPU (Arch Linux):**
+  * *Symptom:* Generation is slow; `nvidia-smi` shows 0MB VRAM used by `ollama_llama_server`.
+  * *Fix:* Arch's default `extra/ollama` package lacks CUDA bindings. Run:
+    ```bash
+    sudo pacman -S ollama-cuda
+    sudo systemctl restart ollama
+    ```
+* **WebKitGTK Protocol Error 71 on Wayland (`prime-run`):**
+  * *Symptom:* App crashes with `Gdk-Message: Error 71 (Protocol error) dispatching to Wayland display`.
+  * *Fix:* Omni-Dashboard contains an automated runtime guard. Alternatively, run without `prime-run` (GUI on iGPU, Ollama on dGPU) or export:
+    ```bash
+    export WEBKIT_DISABLE_DMABUF_RENDERER=1
+    npm run tauri dev
+    ```
+* **Screen Capture Not Working on Wayland:**
+  * *Fix:* Ensure `grim` is installed (`sudo pacman -S grim` or `sudo apt install grim`). On X11 sessions, install `scrot` or `imagemagick`.
+* **Music Player Fails to Download or Play:**
+  * *Fix:* Verify that all GStreamer plugins are installed:
+    ```bash
+    sudo pacman -S gst-plugins-base gst-plugins-good gst-plugins-bad gst-libav pipewire-pulse yt-dlp ffmpeg
+    ```
+
+### 9.3 General & AI Diagnostics
+
+* **`Network request failed` When Querying the Assistant:**
+  * *Cause:* The Ollama server is offline or unreachable.
+  * *Fix:* Launch a terminal and execute `ollama serve`. Verify availability at `http://127.0.0.1:11434`.
+* **Database State Reset (Danger Zone Recovery):**
+  * If the database ever enters an unexpected state, open **Settings $\to$ Danger Zone $\to$ Full Factory Reset**. This safely wipes all tables, vacuums SQLite storage, resets temporary files, and re-initializes factory default configuration.
 
 ---
 
