@@ -6,3 +6,5 @@ omni_core.db
 omni_core.db-journal
 
 src-tauri/music_cache/
+*.AppImage
+build.log
