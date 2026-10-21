@@ -22,27 +22,32 @@ Modern productivity tools are increasingly fragmented, locked behind monthly sub
 ## 📋 Table of Contents
 1. [Cross-Platform Architecture & Guidelines](#1-cross-platform-architecture--guidelines)
 2. [System Architecture & Data Flow](#2-system-architecture--data-flow)
-3. [Deep Dive: Core Engineering Modules](#3-deep-dive-core-engineering-modules)
-   - [3.1 Autonomous Neural Action Bridge](#31-autonomous-neural-action-bridge)
-   - [3.2 Local RAG & Academic Document Engine](#32-local-rag--academic-document-engine)
-   - [3.3 Hardware Telemetry, GPU Acceleration & Adaptive VRAM Management](#33-hardware-telemetry-gpu-acceleration--adaptive-vram-management)
-   - [3.4 Multimodal Audio & Zero-Cloud Voice Synthesis](#34-multimodal-audio--zero-cloud-voice-synthesis)
-   - [3.5 The Observer Effect: Real-Time Context Engine](#35-the-observer-effect-real-time-context-engine)
-   - [3.6 Study & Focus Automation](#36-study--focus-automation)
-   - [3.7 Full Factory Reset & Data Sovereignty](#37-full-factory-reset--data-sovereignty)
-4. [Relational Database Schema (SQLite WAL)](#4-relational-database-schema-sqlite-wal)
-5. [AI Persona Engine & Prompt Matrix](#5-ai-persona-engine--prompt-matrix)
-6. [Tauri IPC API Reference](#6-tauri-ipc-api-reference)
-7. [Comprehensive Setup & Installation Protocol](#7-comprehensive-setup--installation-protocol)
-   - [7.1 Linux Setup (Arch Linux, Ubuntu/Debian, Fedora)](#71-linux-setup)
-   - [7.2 Windows Setup (Windows 10 / 11)](#72-windows-setup)
-   - [7.3 Ollama Local AI Configuration](#73-ollama-local-ai-configuration)
-   - [7.4 Piper TTS Runtime Setup](#74-piper-tts-runtime-setup)
-   - [7.5 Development & Hybrid GPU Execution](#75-development--hybrid-gpu-execution)
-   - [7.6 Production Release Packaging](#76-production-release-packaging)
-8. [Troubleshooting & Operational Notes](#8-troubleshooting--operational-notes)
-9. [Application Showcase & Gallery](#9-application-showcase--gallery)
-10. [License & Terms of Use](#10-license--terms-of-use)
+3. [Complete Dependencies & Technology Stack](#3-complete-dependencies--technology-stack)
+   - [3.1 External System Runtimes & CLI Tools](#31-external-system-runtimes--cli-tools)
+   - [3.2 Rust Backend Dependencies (Cargo.toml)](#32-rust-backend-dependencies-cargotoml)
+   - [3.3 Frontend NPM Dependencies (package.json)](#33-frontend-npm-dependencies-packagejson)
+   - [3.4 Local AI Model Suite & Voice Models](#34-local-ai-model-suite--voice-models)
+4. [Deep Dive: Core Engineering Modules](#4-deep-dive-core-engineering-modules)
+   - [4.1 Autonomous Neural Action Bridge](#41-autonomous-neural-action-bridge)
+   - [4.2 Local RAG & Academic Document Engine](#42-local-rag--academic-document-engine)
+   - [4.3 Hardware Telemetry, GPU Acceleration & Adaptive VRAM Management](#43-hardware-telemetry-gpu-acceleration--adaptive-vram-management)
+   - [4.4 Multimodal Audio & Zero-Cloud Voice Synthesis](#44-multimodal-audio--zero-cloud-voice-synthesis)
+   - [4.5 The Observer Effect: Real-Time Context Engine](#45-the-observer-effect-real-time-context-engine)
+   - [4.6 Study & Focus Automation](#46-study--focus-automation)
+   - [4.7 Full Factory Reset & Data Sovereignty](#47-full-factory-reset--data-sovereignty)
+5. [Relational Database Schema (SQLite WAL)](#5-relational-database-schema-sqlite-wal)
+6. [AI Persona Engine & Prompt Matrix](#6-ai-persona-engine--prompt-matrix)
+7. [Tauri IPC API Reference](#7-tauri-ipc-api-reference)
+8. [Comprehensive Setup & Installation Protocol](#8-comprehensive-setup--installation-protocol)
+   - [8.1 Linux Setup (Arch Linux, Ubuntu/Debian, Fedora)](#81-linux-setup)
+   - [8.2 Windows Setup (Windows 10 / 11)](#82-windows-setup)
+   - [8.3 Ollama Local AI Configuration](#83-ollama-local-ai-configuration)
+   - [8.4 Piper TTS Runtime Setup](#84-piper-tts-runtime-setup)
+   - [8.5 Development & Hybrid GPU Execution](#85-development--hybrid-gpu-execution)
+   - [8.6 Production Release Packaging](#86-production-release-packaging)
+9. [Troubleshooting & Operational Notes](#9-troubleshooting--operational-notes)
+10. [Application Showcase & Gallery](#10-application-showcase--gallery)
+11. [License & Terms of Use](#11-license--terms-of-use)
 
 ---
 
@@ -141,9 +146,80 @@ sequenceDiagram
 
 ---
 
-## 3. 🔬 Deep Dive: Core Engineering Modules
+## 3. 📦 Complete Dependencies & Technology Stack
 
-### 3.1 Autonomous Neural Action Bridge
+Omni-Dashboard is built with a minimal, high-performance technology footprint. The complete matrix of system runtimes, Rust backend crates, frontend packages, and local AI model suites is detailed below:
+
+### 3.1 External System Runtimes & CLI Tools
+| Runtime / Dependency | Minimum Version | Target Platform | Role in Omni-Dashboard |
+| :--- | :--- | :--- | :--- |
+| **Node.js & npm** | `v18.0.0+` | Linux & Windows | Executes the Vite compiler, development server, and React build pipelines. |
+| **Rust Toolchain (Cargo)** | `v1.75.0+` (stable) | Linux & Windows | Compiles the Tauri v2 backend daemon, Tokio async loop, and bundled SQLite engine. |
+| **Ollama** | Latest (`ollama-cuda` on Arch) | Linux & Windows | Local Large Language Model daemon serving model inference over `127.0.0.1:11434`. |
+| **Piper TTS** | Standalone binary (`0.1.0+`) | Linux & Windows | Zero-cloud, low-latency neural speech synthesis via ONNX voice runtimes. |
+| **yt-dlp** | Latest binary | Linux & Windows | Command-line YouTube Music audio extractor for the offline music vault. |
+| **FFmpeg** | `v4.4+` | Linux & Windows | Audio stream transcode engine (extracting MP3s) and meeting audio loopback recorder. |
+| **WebKit2GTK** | `webkit2gtk-4.1` | Linux | GTK3 web rendering engine powering the Tauri window on Linux. |
+| **WebView2** | Evergreen Runtime | Windows 10/11 | Microsoft Edge Chromium rendering backend for Tauri on Windows. |
+| **GStreamer Codecs** | Plugins Base, Good, Bad, Libav | Linux | Required for multimedia audio playback via Rodio on Linux. |
+| **Grim / Scrot** | `grim` (Wayland), `scrot` (X11) | Linux | CLI utilities for capturing user screen states for multimodal AI inspection. |
+| **Git LFS** | Git Large File Storage | Linux & Windows | Clones Piper `.onnx` voice models without git repository bloat. |
+
+### 3.2 Rust Backend Dependencies (`src-tauri/Cargo.toml`)
+| Crate | Version | Target Platform | Architecture Purpose |
+| :--- | :--- | :--- | :--- |
+| **`tauri`** | `2.0.0` | All | Tauri v2 desktop runtime, IPC command dispatcher, system tray, and asset protocol loader. |
+| **`tauri-build`** | `2.0.0` | All (Build) | Build script integrating Tauri compilation hooks. |
+| **`tokio`** | `1.0` (full) | All | Multi-threaded async runtime driving telemetry loops, timers, and HTTP requests. |
+| **`rusqlite`** | `0.31.0` (bundled) | All | Embedded relational SQLite engine compiled directly into the binary with WAL concurrency. |
+| **`active-win-pos-rs`** | `0.11.0` | All (Linux & Win) | Queries active foreground window titles, process names, and screen coordinates cross-platform. |
+| **`sysinfo`** | `0.39.6` | All | High-frequency telemetry gathering for CPU core utilization and system RAM allocation. |
+| **`rodio`** | `0.18.1` | All | Native audio playback engine driving the offline music player via ALSA/PulseAudio/WASAPI. |
+| **`lopdf`** | `0.32` | All | Direct PDF text extraction tool scanning academic textbooks page-by-page for Local RAG. |
+| **`pdf-extract`** | `0.7.2` | All | Auxiliary PDF extraction engine for parsing complex document formats. |
+| **`reqwest`** | `0.12` (rustls-tls) | All | Asynchronous HTTP client communicating with Ollama REST endpoints and YouTube search. |
+| **`ureq`** | `2.9` | All | Synchronous HTTP client used to dispatch rapid `keep_alive: 0` VRAM eviction payloads. |
+| **`scraper`** | `0.19` | All | DOM/HTML parser extracting search results from YouTube Music endpoints. |
+| **`serde` / `serde_json`** | `1.0` | All | Serialization and deserialization of typed IPC messages and database rows. |
+| **`urlencoding`** | `2.1` | All | URL encoding and parameter sanitation helper. |
+| **`base64`** | `0.23.0` | All | Encodes screenshots and images into Base64 strings for vision LLM payloads. |
+| **`tauri-plugin-autostart`** | `2.0.0` | All | Provides OS startup integration for background monitoring. |
+| **`tauri-plugin-dialog`** | `2.0.0` | All | Invokes native system file pickers for textbook and PDF uploads. |
+| **`tauri-plugin-notification`** | `2.0.0` | All | Native desktop notifications for Pomodoro cycles, reminders, and alerts. |
+| **`tauri-plugin-global-shortcut`** | `2.3.2` | All | Global system keybinding handler for toggling the quick AI overlay HUD. |
+| **`uiautomation`** | `0.25` | Windows only | Windows UIAutomation COM tree walker for deep active window accessibility text extraction. |
+| **`windows`** | `0.52` | Windows only | Direct Win32 API bindings for `Win32_Foundation` and `Win32_UI_WindowsAndMessaging`. |
+
+### 3.3 Frontend NPM Dependencies (`package.json`)
+| Package | Version | Layer | Description |
+| :--- | :--- | :--- | :--- |
+| **`react` & `react-dom`** | `^18.2.0` | UI Framework | Powers the declarative component hierarchy and state hooks. |
+| **`vite`** | `^5.0.0` | Build System | Modern frontend development server providing instant HMR and Rollup bundling. |
+| **`typescript`** | `^5.0.2` | Language | Full static typing across React components and Tauri IPC bindings. |
+| **`tailwindcss`** | `^4.3.3` | Styling | Utility-first styling engine powering the dark-mode aesthetic. |
+| **`@tailwindcss/vite`** | `^4.3.3` | Build Plugin | Direct Vite plugin compiler for Tailwind CSS v4. |
+| **`lucide-react`** | `^1.26.0` | Iconography | High-density vector SVG icon library for dashboard widgets and controls. |
+| **`recharts`** | `^3.10.1` | Data Viz | Composable SVG charting library rendering screen-time and telemetry charts. |
+| **`react-markdown`** | `^10.1.0` | Markdown | Renders formatted markdown from AI conversational responses. |
+| **`remark-gfm`** | `^4.0.1` | Markdown Plugin | GitHub Flavored Markdown plugin supporting tables, strikethroughs, and checklists. |
+| **`@tauri-apps/api`** | `^2.11.1` | IPC Bridge | TypeScript client bindings for communicating with the Rust backend daemon. |
+
+### 3.4 Local AI Model Suite & Voice Models
+| Model Name | Parameter Size | Ollama Model Tag | Primary Role in Omni-Dashboard |
+| :--- | :--- | :--- | :--- |
+| **Llama 3.2** | 3 Billion | `llama3.2:3b` | General conversational assistant, study accountability, daily planning. |
+| **Qwen 2.5 Coder** | 3 Billion | `qwen2.5-coder:3b` | Code analysis, syntax debugging, algorithmic math, technical tasks. |
+| **Phi-4 Mini** | 3.8 Billion | `phi4-mini:latest` | Ultra-fast reasoning and one-click lecture note summarization. |
+| **Qwen 2.5/3.5 Vision** | 4 Billion | `qwen3.5:4b` | Multimodal visual inspection of screenshots and diagrams. |
+| **Nemotron Mini** | 4 Billion | `nemotron-mini:latest` | Academic textbook RAG extraction and context citation. |
+| **Nomic Embed Text** | 137 Million | `nomic-embed-text` | High-density semantic vector embeddings for document similarity scoring. |
+| **Piper Neural Voices** | 10 Models | `en_US-*-medium`, etc. | 10 distinct neural voices providing offline audio readouts for AI personas. |
+
+---
+
+## 4. 🔬 Deep Dive: Core Engineering Modules
+
+### 4.1 Autonomous Neural Action Bridge
 Omni-Dashboard utilizes a high-reliability **Zero-Math Fuzzy Parsing Tag Execution Bridge** that transforms natural-language conversational output into atomic database mutations.
 
 #### Bracketed Tag Format Specifications
@@ -161,7 +237,7 @@ Small, quantized local models (such as 3B–4B parameter LLMs) can hallucinate o
 
 ---
 
-### 3.2 Local RAG & Academic Document Engine
+### 4.2 Local RAG & Academic Document Engine
 The Retrieval-Augmented Generation (RAG) module provides document analysis directly on-device without cloud ingestion:
 1. **PDF Text Extraction:** Uploaded PDF textbooks and notes are parsed using `lopdf`, extracting structured textual streams on a per-page basis.
 2. **Page-Indexed Storage:** Extracted text is indexed into the `textbook_pages` relational table.
@@ -170,7 +246,7 @@ The Retrieval-Augmented Generation (RAG) module provides document analysis direc
 
 ---
 
-### 3.3 Hardware Telemetry, GPU Acceleration & Adaptive VRAM Management
+### 4.3 Hardware Telemetry, GPU Acceleration & Adaptive VRAM Management
 Running LLMs on personal laptops requires precise resource budgeting to avoid thermal throttling, out-of-memory errors, and sluggish inferencing.
 
 * **Dual-Engine System Diagnostics:** The Rust daemon queries system RAM via `sysinfo` and dedicated GPU parameters via `nvidia-smi`. The dashboard displays real-time CPU usage, system RAM, GPU compute utilization, and active VRAM allocation.
@@ -179,7 +255,7 @@ Running LLMs on personal laptops requires precise resource budgeting to avoid th
 
 ---
 
-### 3.4 Multimodal Audio & Zero-Cloud Voice Synthesis
+### 4.4 Multimodal Audio & Zero-Cloud Voice Synthesis
 Omni-Dashboard integrates on-device voice generation and an offline music player for deep focus sessions:
 
 * **Neural Voice Synthesis (Piper TTS):** Synthesizes natural speech offline using ONNX voice models. Cadence is dynamically adjusted based on user-configured words-per-minute (`Length Scale = 200 / WPM`).
@@ -188,7 +264,7 @@ Omni-Dashboard integrates on-device voice generation and an offline music player
 
 ---
 
-### 3.5 The Observer Effect: Real-Time Context Engine
+### 4.5 The Observer Effect: Real-Time Context Engine
 Built to maintain accountability, the background observer tracks active application usage:
 1. **Multi-Compositor Window Detection:** Captures active window titles and process identifiers every 10 seconds via `active-win-pos-rs` on Linux (Wayland & X11) and Win32 UIAutomation on Windows.
 2. **Behavioral Categorization:** Automatically categorizes foreground windows into **"Deep Work"** (IDE, terminal, text editor), **"Research"** (academic papers, docs), or **"Distraction"** (social media, video streaming).
@@ -197,14 +273,14 @@ Built to maintain accountability, the background observer tracks active applicat
 
 ---
 
-### 3.6 Study & Focus Automation
+### 4.6 Study & Focus Automation
 * **Auto-Flashcard Generation:** Automatically extracts key concepts from study notes and textbook chapters, generating spaced-repetition flashcard decks.
 * **One-Click Note Summaries:** Formats lecture notes and study documents into executive summaries and action items using local models.
 * **Meeting Transcription Pipeline:** Captures system audio loopback for offline speech-to-text processing.
 
 ---
 
-### 3.7 Full Factory Reset & Data Sovereignty
+### 4.7 Full Factory Reset & Data Sovereignty
 In keeping with strict data sovereignty, Omni-Dashboard puts the user in total control of their data:
 * **One-Click Nuclear Reset:** Located in **Settings $\to$ Danger Zone**, the **Full Factory Reset** button gives users the ability to completely purge all local application state with a single confirmation.
 * **Complete State Sanitization:** Safely drops all 20 relational database tables, performs an SQLite `VACUUM` to reclaim disk space, purges temporary memory databases (`omni_memory.db`), cleans offline music caches, and reinitializes fresh tables with default configuration.
@@ -212,7 +288,7 @@ In keeping with strict data sovereignty, Omni-Dashboard puts the user in total c
 
 ---
 
-## 4. 💾 Relational Database Schema (SQLite WAL)
+## 5. 💾 Relational Database Schema (SQLite WAL)
 
 The local database runs SQLite in Write-Ahead Logging (WAL) mode, enabling concurrent read and write operations across background telemetry threads and interactive UI sessions.
 
@@ -372,7 +448,7 @@ CREATE TABLE IF NOT EXISTS flashcards (
 
 ---
 
-## 5. 🎭 AI Persona Engine & Prompt Matrix
+## 6. 🎭 AI Persona Engine & Prompt Matrix
 
 Omni-Dashboard includes 10 engineered AI personas, each dynamically modifying the LLM's system prompt and corresponding Piper neural voice model:
 
@@ -391,7 +467,7 @@ Omni-Dashboard includes 10 engineered AI personas, each dynamically modifying th
 
 ---
 
-## 6. 🔌 Tauri IPC API Reference
+## 7. 🔌 Tauri IPC API Reference
 
 Communication between the React frontend and Rust backend occurs over typed asynchronous IPC commands.
 
@@ -474,11 +550,11 @@ invoke("download_yt_song", { videoId: string; title: string; artist: string; dur
 
 ---
 
-## 7. ⚙️ Comprehensive Setup & Installation Protocol
+## 8. ⚙️ Comprehensive Setup & Installation Protocol
 
 Follow the setup instructions corresponding to your operating system.
 
-### 7.1 Linux Setup
+### 8.1 Linux Setup
 
 #### Arch Linux
 Install the necessary development libraries, WebKitGTK, GStreamer, audio backends, and utilities:
@@ -539,7 +615,7 @@ sudo apt-get update && sudo apt-get install -y \
 
 ---
 
-### 7.2 Windows Setup
+### 8.2 Windows Setup
 
 1. **Node.js:** Install Node.js 18 or higher from [nodejs.org](https://nodejs.org/).
 2. **Rust Toolchain:** Install via `rustup` using the MSVC ABI:
@@ -556,7 +632,7 @@ sudo apt-get update && sudo apt-get install -y \
 
 ---
 
-### 7.3 Ollama Local AI Configuration
+### 8.3 Ollama Local AI Configuration
 
 Install and launch the [Ollama](https://ollama.com/) daemon, then pull the model suite:
 
@@ -588,7 +664,7 @@ ollama pull nomic-embed-text
 
 ---
 
-### 7.4 Piper TTS Runtime Setup
+### 8.4 Piper TTS Runtime Setup
 
 Verify that the `piper` directory exists within `src-tauri`:
 ```text
@@ -607,7 +683,7 @@ On Linux, Piper can also be installed system-wide or symlinked directly into you
 
 ---
 
-### 7.5 Development & Hybrid GPU Execution
+### 8.5 Development & Hybrid GPU Execution
 
 Clone the repository and install dependencies:
 ```bash
@@ -633,7 +709,7 @@ npm install
 
 ---
 
-### 7.6 Production Release Packaging
+### 8.6 Production Release Packaging
 
 To compile release binaries:
 
@@ -651,7 +727,7 @@ Generates `.msi` and `.exe` standalone installers in `src-tauri\target\release\b
 
 ---
 
-## 8. 🛠️ Troubleshooting & Operational Notes
+## 9. 🛠️ Troubleshooting & Operational Notes
 
 ### Ollama Not Utilizing NVIDIA GPU (Arch Linux)
 * **Symptom:** Text generation is slow; `nvidia-smi` displays 0MB allocated by `ollama_llama_server`.
@@ -673,7 +749,7 @@ Generates `.msi` and `.exe` standalone installers in `src-tauri\target\release\b
 
 ---
 
-## 9. 📸 Application Showcase & Gallery
+## 10. 📸 Application Showcase & Gallery
 
 <img width="1917" height="1078" alt="image" src="https://github.com/user-attachments/assets/25d964e7-f354-49ac-b554-326898aeff77" />
 
@@ -713,7 +789,7 @@ Generates `.msi` and `.exe` standalone installers in `src-tauri\target\release\b
 
 ---
 
-## 10. 📜 License & Terms of Use
+## 11. 📜 License & Terms of Use
 
 This project is licensed under the **GNU General Public License v3 (GPLv3)** with explicit additional terms as permitted under **GPLv3 Section 7**. 
 
