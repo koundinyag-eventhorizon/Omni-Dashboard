@@ -36,6 +36,19 @@ jobs:
           node-version: 20
           cache: 'npm'
 
+      - name: Resolve Release Tag
+        shell: bash
+        run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${{ github.ref_name }}"
+          else
+            VERSION=$(node -p "require('./package.json').version")
+            TAG="v$VERSION"
+          fi
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+
       - name: Install Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
 
@@ -61,10 +74,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.event.inputs.tag || github.ref_name }}
-          releaseName: 'Omni-Dashboard ${{ github.event.inputs.tag || github.ref_name }}'
+          tagName: ${{ env.RELEASE_TAG }}
+          releaseName: 'Omni-Dashboard ${{ env.RELEASE_TAG }}'
           releaseBody: |
-            ## Omni-Dashboard Release ${{ github.event.inputs.tag || github.ref_name }}
+            ## Omni-Dashboard Release ${{ env.RELEASE_TAG }}
             
             Autonomous, local-first productivity ecosystem and intelligent desktop assistant for **Windows** and **Linux**.
             
