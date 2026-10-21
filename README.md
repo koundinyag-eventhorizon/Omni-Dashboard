@@ -1,14 +1,14 @@
 # Omni-Dashboard (Omni-Core) 
 
-> **Omni-Dashboard is an autonomous, local-first productivity app and your veyr own AI helper. It features a background observer, strict data sovereignty, and a PiecesOS-style live memory DB designed to get that discipline to Workmaxx/Gradesmaxx.**
+> **Omni-Dashboard is an autonomous, cross-platform (Linux & Windows), local-first productivity app and your very own AI helper. It features a background observer, strict data sovereignty, dedicated GPU acceleration, and a PiecesOS-style live memory DB designed to get that discipline to Workmaxx/Gradesmaxx.**
 
-Welcome to the edge of productivity. If you are a student, a developer, or a professional who's tired of paying for like ten different subscription apps, constantly getting distracted, and worrying about corporations harvesting your private data, then **Omni-Core is your ultimate solution.**
+Welcome to the edge of productivity. If you are a student, a developer, or a professional who's tired of paying for ten different subscription apps, constantly getting distracted, and worrying about corporations harvesting your private data, then **Omni-Core is your ultimate solution.**
 
-## Why this fits in (For the Hack Club lmao)
+## Why this fits in (For the Hack Club)
 
-Omni-Dashboard will completely replace your fragmented, cloud-dependent SaaS (Software as a Service) applications with a unified, hyper-fast,AND offline platform. With **Tauri v2** (a framework for building tiny, blazing-fast desktop apps) and a **Rust** backend, it can pair a database with a multiple Local AI models powered by **Ollama** (you need to have Ollama up and running for this with Llama3.2:3b and more downloaded). 
+Omni-Dashboard completely replaces fragmented, cloud-dependent SaaS applications with a unified, hyper-fast, cross-platform, AND offline platform. Built with **Tauri v2** and a **Rust** backend, it pairs an embedded database with multiple local AI models powered by **Ollama** (requiring a local Ollama server with models like `llama3.2:3b`, `qwen2.5-coder:3b`, etc.). 
 
-Beyond standard task management, Omni-Core introduces what we like to call the **Observer Effect**: is is basically an un-bypassable background tracker that logs your active screen time, categorizes your behavior (Deep Work vs. Distraction), and streams this live context directly into the AI's neural memory. So, **The AI knows what you are doing in real-time.** It provides accountability, auto-generated flashcards, automated meeting summaries, AND MORE all without ever sending a single byte of your data to the cloud.
+Beyond standard task management, Omni-Core introduces the **Observer Effect**: an un-bypassable background tracker that logs your active screen time across Linux (X11 & Wayland) and Windows, categorizes your behavior (Deep Work vs. Distraction), and streams this live context directly into the AI's neural memory. **The AI knows what you are doing in real-time.** It provides accountability, auto-generated flashcards, automated meeting summaries, and offline music playback—all without sending a single byte of your data to the cloud.
 
 ---
 
@@ -17,16 +17,18 @@ Beyond standard task management, Omni-Core introduces what we like to call the *
 2. [Deep Dive: Core Engineering Modules](#2-deep-dive-core-engineering-modules)
    - [2.1 Autonomous Neural Action Bridge (How the AI "Does" Things)](#21-autonomous-neural-action-bridge)
    - [2.2 Local RAG & PDF Textbook Engine (The AI Study Buddy)](#22-local-rag--pdf-textbook-engine)
-   - [2.3 System Telemetry & Dynamic VRAM Purging (Crash Prevention)](#23-system-telemetry--dynamic-vram-purging)
+   - [2.3 System Telemetry, GPU Acceleration & Dynamic VRAM Purging](#23-system-telemetry-gpu-acceleration--dynamic-vram-purging)
    - [2.4 Multimodal Audio & Zero-Cloud TTS Pipeline (Offline Spotify + Voices)](#24-multimodal-audio--zero-cloud-tts-pipeline)
-   - [2.5 The Observer Effect: Immutable Telemetry & Live Memory](#25-the-observer-effect-immutable-telemetry--live-memory)
+   - [2.5 The Observer Effect: Cross-Platform Telemetry & Live Memory](#25-the-observer-effect-cross-platform-telemetry--live-memory)
    - [2.6 Advanced Automation: Flashcards & Auto-Summaries](#26-advanced-automation-flashcards--auto-summaries)
+   - [2.7 Full Factory Reset & Data Sovereignty](#27-full-factory-reset--data-sovereignty)
 3. [Relational Database Schema (SQLite WAL)](#3-relational-database-schema-sqlite-wal)
 4. [AI Persona Engine & Prompt Matrix](#4-ai-persona-engine--prompt-matrix)
 5. [Tauri IPC API Reference (For Developers)](#5-tauri-ipc-api-reference)
-6. [Comprehensive Setup & Build Protocol (Student-Friendly Guide)](#6-comprehensive-setup--build-protocol)
-7. [Troubleshooting & CS Engineering Notes](#7-troubleshooting--cs-engineering-notes)
-8. [License & Terms of Use](#8-license--terms-of-use)
+6. [Comprehensive Setup & Build Protocol (Arch Linux & Windows)](#6-comprehensive-setup--build-protocol)
+7. [Troubleshooting & Hardware Acceleration Notes](#7-troubleshooting--hardware-acceleration-notes)
+8. [Images of Project](#8-images-of-project)
+9. [License & Terms of Use](#9-license--terms-of-use)
 
 ---
 
@@ -122,37 +124,49 @@ Small, highly compressed AI models (which you need if you are running them on a 
 
 ---
 
-### 2.3 System Telemetry & Dynamic VRAM Purging (Crash Prevention)
-Running Artificial Intelligence locally requires RAM (Memory) and VRAM (Video Memory on your Graphics Card). And, uhh,well, both of those are, let's just say, not in a good market lol, so yeah, managing them is quite necessary if you don't got pockets as deep as the Mariana Trench hehe. 
+### 2.3 System Telemetry, GPU Acceleration & Dynamic VRAM Purging
+Running Artificial Intelligence locally requires careful management of System RAM and Dedicated VRAM (Video Memory on your Graphics Card). Omni-Core includes a comprehensive hardware-aware engine to maximize performance across modern desktop and budget laptop hardware.
 
-* **High-Frequency Diagnostics:** The app constantly monitors your computer's physical memory health to ensure it isn't overheating or crashing.
-* **Dynamic VRAM Purging:** If you switch from a writing AI (like `llama3.2`) to a coding AI (like `qwen2.5-coder`), your computer will normally crash because it can't hold both in memory. Omni-Core actively intervenes. The instant you switch, it sends a kill-signal to the old AI model, flushing it out of your graphics card completely to make room for the new one.
+* **Dual-Engine System & GPU Diagnostics:** The Rust daemon continuously queries system memory and dedicated GPU metrics (via `nvidia-smi` on NVIDIA systems and `sysinfo` for CPU/RAM). The UI displays real-time CPU utilization, system RAM usage, GPU VRAM allocation (used vs. total), and GPU compute percentage.
+* **Low-VRAM Adaptive Context Clamping:** Small dedicated GPUs (such as the **NVIDIA GeForce MX450 2GB GDDR6, TU117 architecture**) easily run out of memory if an LLM allocates huge context windows (e.g., 16k tokens requires $\approx$ 3.8 GB VRAM, triggering a slow CPU fallback). Omni-Core automatically detects GPUs with $\le$ 3 GB VRAM and clamps the Ollama context window (`num_ctx`) to **4096 tokens**. This guarantees that 100% of the model layers and KV cache stay within VRAM, delivering 4–5$\times$ faster inferencing speeds with zero crashing.
+* **Dynamic VRAM Purging:** When switching between different AI tasks (e.g., moving from general chat with `llama3.2` to coding with `qwen2.5-coder`), Omni-Core actively invokes `flush_vram`. It sends an eviction payload to Ollama (`keep_alive: 0`), flushing the prior model from VRAM before spinning up the next model.
 
 ---
 
 ### 2.4 Multimodal Audio & Zero-Cloud TTS Pipeline (Offline Spotify + Voices)
-We also provide lightning-fast voice generation and a built-in music player.
+We provide lightning-fast voice generation and a built-in music player that works seamlessly on both Linux and Windows.
 
-* **Piper TTS Engine:** The AI can speak to you using offline voice models. The system does math in the background (`Length Scale = 200 / Words Per Minute`) to perfectly match your preferred listening speed.
-* **YT-DLP Offline Vault:** Instead of paying for Spotify Premium, Omni-Core allows you to search YouTube Music directly inside the app. When you click download, it fetches the raw `.mp3` file directly to your hard drive. It builds an unbreakable, ad-free "Flow State" playlist vault that works perfectly even if you have no Wi-Fi (or LAN/Ethernet for the super-geeks out there).
+* **Cross-Platform Piper TTS Engine:** The AI speaks using offline neural ONNX voice models. The system automatically selects the platform-appropriate binary (`piper` on Linux or `piper.exe` on Windows) and adjusts cadence dynamically (`Length Scale = 200 / Words Per Minute`).
+* **YT-DLP Offline Vault:** Omni-Core allows searching YouTube Music directly inside the app. Clicking download invokes native `yt-dlp` and `ffmpeg` to fetch and tag raw `.mp3` files directly into your local app storage. Platform-specific execution flags (silent flags on Windows, non-blocking pipe streams on Linux) ensure smooth, unthrottled downloads.
+* **Offline Flow-State Playback:** Songs play locally via Rodio and platform audio backends (PulseAudio / PipeWire on Linux, WASAPI on Windows) with full offline seeking, playlist creation, and volume control.
 
 ---
 
-### 2.5 The Observer Effect: Immutable Telemetry & Live Memory
-This is the psychological stone foundation we built out of Omni-Dashboard, built specifically for procrastinating students. Psychology proves we work exponentially harder when we know we are being watched, like when you have that one teacher/manager running rings around you. Quite annoying yes, but increase productivity.
+### 2.5 The Observer Effect: Cross-Platform Telemetry & Live Memory
+The psychological foundation of Omni-Dashboard is built for accountability and deep focus.
 
-1. **The Silent Watcher Thread:** It's basically a detached, invisible loop that runs continuously in the background of your computer. Every 10 seconds, it asks your operating system: *"What app/website is the user looking at right now?"*
-2. **Behavioral Categorization:** It categorizes your behavior automatically. Using VS Code or reading a PDF? Tagged as **"Deep Work"**. Scrolling Twitter or YouTube? Tagged as **"Distraction"**.
-3. **Immutable Persistence:** This data is written into the `immutable_telemetry` table in your database. **There is no delete button.** You cannot hide your distractions from the system. You cannot lie to yourself about how much you studied. Well, unless you find out how to get to system files, but if you are willing to go there, nobody can help you lol.
-4. **Live Memory Stream:** Just like high-end tools (PiecesOS or Windows Recall), Omni-Core rolls up your recent activity into a summary. When you ask the AI for advice, it secretly injects: *"The user has spent 45m in VS Code, and 12m on YouTube."* **The AI is fully aware of your real-time behavior.** It will proactively suggest a break if you are overworked, or harshly scold you (depends on persona heavily tho, [side-note, please don't go for Victor lol, he's the strictest of all of them. We built him as a test-subject and kept him there, just for fun]) if you've been slacking off.
+1. **Cross-Platform Active Window Detection:**
+   * **Linux:** Uses `active-win-pos-rs` to read active window titles and application names across both **Wayland** (via compositor protocols/XWayland) and **X11**.
+   * **Windows:** Uses native Win32 APIs and UIAutomation COM walkers.
+2. **Behavioral Categorization:** Every 10 seconds, the background thread categorizes your active foreground activity into **"Deep Work"** (VS Code, terminal, PDF reader), **"Research"**, or **"Distraction"** (YouTube, social media, games).
+3. **Immutable Persistence:** Activity entries are written into the `immutable_telemetry` SQLite table. Under normal operation, distraction logs cannot be retroactively erased or falsified.
+4. **Live Memory Stream:** Omni-Core summarizes your recent behavioral history and injects it into Ollama's active system prompt. If you've been working diligently, your AI assistant adjusts to support your flow; if you've been procrastinating, strict personas (like Victor or Chloe) will call you out immediately.
 
 ---
 
 ### 2.6 Advanced Automation: Flashcards & Auto-Summaries
-It uses your raw data to do your homework for you.
-* **Auto-Flashcard Generation:** By analyzing the notes you take in the app and the RAG textbook extracts, the AI autonomously formats and spits out ready-to-study flashcard arrays.
-* **Meeting & Class Summarization:** Hit the "AI Summarize" button on any class note, and the system packages the raw text, queries the High-Performance AI model, and appends a deeply structured, bulleted list of key takeaways to the bottom of your document.
-* **Future Audio Loopback:** The system is wired to eventually capture your computer's internal audio (WASAPI loopback). This means it will listen to your Zoom classes and transcribe them live.
+* **Auto-Flashcard Generation:** Analyzes markdown study notes and RAG textbook extracts to generate structured flashcard decks for active recall.
+* **Meeting & Class Summarization:** Hit "AI Summarize" on any note to generate bulleted takeaways, action items, and executive summaries via your local LLM.
+* **Audio Capture Framework:** Configured for local audio capture (PulseAudio/PipeWire monitor sources on Linux, WASAPI loopback on Windows) for on-device transcription.
+
+---
+
+### 2.7 Full Factory Reset & Data Sovereignty
+In keeping with strict data sovereignty, Omni-Core puts the user in total control of their data.
+
+* **One-Click Nuclear Reset:** Located in **Settings $\to$ Danger Zone**, the **Full Factory Reset** button gives users the ability to completely purge all application data with a single click.
+* **Safe Clean-Slate Wipe:** The backend drops all 20 relational database tables, performs an SQLite `VACUUM` to zero out file footprint, deletes temporary live memory stores (`omni_memory.db`), cleans cached downloaded audio files, and re-executes clean schema initialization with default settings.
+* **No Broken State:** The application remains running and immediately returns to pristine out-of-the-box defaults without requiring manual terminal commands or config file deletions.
 
 ---
 
@@ -315,18 +329,36 @@ Omni-Core features 10 distinctly engineered AI personalities. Different studying
 
 ## 5. 🔌 Tauri IPC API Reference (For Developers)
 
-The visual frontend interacts with the hidden Rust engine via IPC (you can google it, pretty tuff stuff for us to explain). Every function is strictly typed and handles potential software errors gracefully.
+The visual frontend interacts with the hidden Rust engine via IPC (Tauri v2 Commands). Every function is strictly typed and handles potential software errors gracefully.
 
-### System & Telemetry Commands
+### System, Telemetry & Reset Commands
 ```typescript
-//Checking your RAM
-invoke("get_telemetry"): Promise<{ ram_total: string, ram_used: string, ram_percent: number }>;
+// System & GPU Telemetry (RAM, CPU, NVIDIA dGPU VRAM & Compute)
+invoke("get_telemetry"): Promise<{
+  ram_total: string,
+  ram_used: string,
+  ram_percent: number,
+  cpu_count: number,
+  cpu_percent: number,
+  gpu_name: string,
+  vram_total: string,
+  vram_used: string,
+  vram_percent: number,
+  gpu_util: string,
+  has_gpu: boolean
+}>;
 
-//The Observer Effect
+// The Observer Effect (Cross-platform active window telemetry)
 invoke("get_active_app_telemetry"): Promise<AppTelemetry>;
+
+// Aggregate telemetry stats for Dashboard graphs
+invoke("get_telemetry_stats"): Promise<TelemetryStats>;
 
 // Payload delivery to Ollama to unload heavy AI models instantly
 invoke("flush_vram", { modelTier: string }): Promise<void>;
+
+// Full Factory Reset (Drops all tables, clears audio/memory caches, resets defaults)
+invoke("factory_reset"): Promise<void>;
 
 // Profile Configuration
 invoke("get_settings"): Promise<UserSettings>;
@@ -382,86 +414,90 @@ invoke("download_yt_song", { videoId: string, title: string, artist: string, dur
 
 ---
 
-## 6. ⚙️ Comprehensive Setup & Build Protocol (Student-Friendly Guide)
+## 6. ⚙️ Comprehensive Setup & Build Protocol (Arch Linux & Windows)
 
-Don't panic if you saw the code, and were like nahh. Setting this up requires a few tools, but it will give you complete ownership of your productivity.
+Omni-Dashboard is built to run natively on both Arch Linux (and other Linux distributions) and Windows 10/11 with zero source code modifications.
 
 ### 6.1 Host System Prerequisites
-Omni-Core compiles directly against your computer's operating system. You need to install these foundational tools:
-* **Node.js:** (Version 18 or higher, e.g., `sudo pacman -S nodejs npm`). This runs the user interface.
-* **Rust Toolchain:** Install via `rustup` (`sudo pacman -S rustup && rustup default stable`). This is the language the heavy-lifting engine is written in.
-* **Linux (Arch Linux) System Packages:**
-  ```bash
-  sudo pacman -S --needed \
-    base-devel \
-    webkit2gtk-4.1 \
-    gtk3 \
-    libsoup3 \
-    libappindicator-gtk3 \
-    gst-plugins-base \
-    gst-plugins-good \
-    gst-plugins-bad \
-    gst-libav \
-    openssl \
-    curl \
-    wget \
-    ffmpeg \
-    yt-dlp \
-    grim \
-    scrot \
-    imagemagick
-  ```
-* **NVIDIA GPU Acceleration (Arch Linux):**
-  If using an NVIDIA dGPU (e.g. GeForce MX450, GTX, RTX), install CUDA support for Ollama:
-  ```bash
-  sudo pacman -S ollama-cuda nvidia-prime
-  ```
-  *(To render the GUI on the discrete GPU on hybrid laptops, launch with `prime-run`)*
-* **Audio Server:** PulseAudio or PipeWire with PulseAudio compatibility layer (`pipewire-pulse`).
-* **Git LFS:** Required to download the AI voice files:
-  ```bash
-  sudo pacman -S git-lfs
-  git lfs install
-  ```
-* **C++ Build Tools (Windows Only):** If you are on Windows, download the *Visual Studio Build Tools* and check the box that says "Desktop development with C++". This is strictly required for your computer to understand the audio engines.
+
+#### Linux (Arch Linux) Setup
+Install required system libraries, WebKitGTK, GStreamer, audio backends, and utilities:
+```bash
+sudo pacman -S --needed \
+  base-devel \
+  webkit2gtk-4.1 \
+  gtk3 \
+  libsoup3 \
+  libappindicator-gtk3 \
+  gst-plugins-base \
+  gst-plugins-good \
+  gst-plugins-bad \
+  gst-libav \
+  openssl \
+  curl \
+  wget \
+  ffmpeg \
+  yt-dlp \
+  grim \
+  scrot \
+  imagemagick \
+  nodejs \
+  npm \
+  git-lfs
+```
+
+##### NVIDIA GPU Acceleration (CUDA for Ollama):
+To enable discrete GPU acceleration (e.g., NVIDIA GeForce MX450, GTX, or RTX cards):
+```bash
+# Arch Linux CUDA-enabled Ollama and PRIME offload utility:
+sudo pacman -S ollama-cuda nvidia-prime
+```
+> [!TIP]
+> Ensure you install `ollama-cuda` instead of generic `ollama` from the Arch repositories so Ollama offloads LLM layers to your NVIDIA GPU!
+
+#### Windows Setup
+* **Node.js:** Version 18 or higher.
+* **Rust Toolchain:** Install via `rustup` (`rustup default stable-x86_64-pc-windows-msvc`).
+* **Visual Studio Build Tools:** Install Visual Studio 2022 Build Tools with the "Desktop development with C++" workload selected.
+* **FFmpeg & yt-dlp:** Ensure `ffmpeg` and `yt-dlp` are installed and added to your Windows system `PATH`.
+* **Git LFS:** Run `git lfs install`.
 
 ---
 
 ### 6.2 Ollama Environment Setup
-[Ollama](https://ollama.com/) is the tool that lets you run large language models on your laptop without the internet. Install `ollama-cuda` (for NVIDIA GPUs), start the service, and pre-fetch the specific AI models Omni-Core uses:
+[Ollama](https://ollama.com/) powers all local AI processing. Start the server and download the recommended model suite:
 
 ```bash
 # 1. Start the Ollama server
 ollama serve
 
 # 2. Pull the models
-# The General conversational brain (Fast reasoning)
+# General conversational brain (Fast reasoning)
 ollama pull llama3.2:3b
 
-# The Coding & Logic brain (Used for math and development)
+# Coding & Logic brain (Used for math and development)
 ollama pull qwen2.5-coder:3b
 
-# The High Performance brain (Ultra-fast execution)
+# High Performance brain (Ultra-fast execution)
 ollama pull phi4-mini:latest
 
-# The Image Engine (For the image scanning, and Hotkey pullup)
+# Vision / Image Engine (Screen inspection & hotkey pullup)
 ollama pull qwen3.5:4b
 
-# The Textbook Scanner brain (Used for RAG and PDFs)
+# Textbook Scanner brain (Used for RAG and PDFs)
 ollama pull nemotron-mini:latest
 
 # Vector Embeddings engine (Required for PDF textbook search)
 ollama pull nomic-embed-text
 ```
 
+> [!NOTE]
+> On laptops with $\le$ 3GB VRAM (such as the GeForce MX450 2GB), Omni-Core automatically clamps the context window to `4096` tokens so the entire model fits in VRAM without spilling into slow CPU swap.
 
 ---
 
 ### 6.3 Piper TTS Runtime Setup
-Verify the `piper` directory structure within the `src-tauri` folder. On Arch Linux, you can either install piper system-wide (e.g., via AUR `piper-tts-bin`) or place the Linux `piper` executable in `src-tauri/piper/piper/piper`.
-
-If the `.onnx` voice models are missing, download them from the Rhasspy Piper voice repository and place them inside the `voices` folder.
-
+Verify the `piper` directory structure within the `src-tauri` folder:
 ```text
 src-tauri/
 └── piper/
@@ -472,63 +508,90 @@ src-tauri/
         ├── en_US-ryan-high.onnx
         ├── en_US-amy-medium.onnx
         ├── en_US-bryce-medium.onnx
+        └── ... (.json config files alongside .onnx)
 ```
+On Arch Linux, you can also install piper via AUR (`yay -S piper-tts-bin`) or symlink it into the above directory.
 
 ---
 
-### 6.4 Development Compilation
+### 6.4 Development Compilation & Execution
 
-Launch the application in development mode. The system handles hot-reloading (updating the screen instantly when code changes).
-
+Clone the repository and install frontend dependencies:
 ```bash
-# 1. Download the code to your computer
+# 1. Clone the repository
 git clone https://github.com/Koundinya-Git/omni-dashboard.git
-
-# 2. Enter the project folder
 cd omni-dashboard
 
-# 3. Install the required web packages
-npm install
+# If working on the dedicated Linux branch:
+git checkout for-linux
 
-# 4. Launch the application!
-npm run tauri dev
+# 2. Install web dependencies
+npm install
 ```
+
+#### Running on Hybrid Graphics (Optimus / PRIME Laptops):
+On dual-GPU laptops (Intel/AMD iGPU + NVIDIA dGPU):
+* **Recommended:** Launch standard development mode:
+  ```bash
+  npm run tauri dev
+  ```
+  This runs the WebKitGTK user interface smoothly on the battery-efficient integrated GPU, while the background Ollama CUDA daemon utilizes 100% of your NVIDIA dGPU for inference.
+* **Running with PRIME Render Offload:**
+  ```bash
+  prime-run npm run tauri dev
+  ```
+  Omni-Dashboard automatically detects `__NV_PRIME_RENDER_OFFLOAD=1` and sets `WEBKIT_DISABLE_DMABUF_RENDERER=1` to prevent Wayland compositor DMA-BUF protocol errors.
 
 ---
 
 ### 6.5 Production Package & Binary Compilation
 
-To build standalone release packages for Linux:
+To build standalone release packages:
 
+#### On Linux:
 ```bash
 npm run tauri build
 ```
+Generates `.AppImage` and `.deb` binaries under `src-tauri/target/release/bundle/`.
 
-Tauri compiles the binary and packages it in `src-tauri/target/release/bundle/` (such as `.AppImage` or `.deb`).
+#### On Windows:
+```bash
+npm run tauri build
+```
+Generates standalone `.exe` and `.msi` installers under `src-tauri\target\release\bundle\`.
 
 ---
 
-## 7. 🛠️ Troubleshooting & CS Engineering Notes
+## 7. 🛠️ Troubleshooting & Hardware Acceleration Notes
 
-### WebKitGTK / Display Issues (Linux)
-* **Cause:** Missing WebKit2GTK libraries or running under pure Wayland without XWayland.
-* **Fix:** Ensure `webkit2gtk-4.1` and `gtk3` are installed (`sudo pacman -S webkit2gtk-4.1 gtk3`). For screen capture on Wayland, ensure `grim` is installed (`sudo pacman -S grim`). On X11, install `scrot` or `imagemagick`.
+### NVIDIA dGPU Not Being Used by Ollama (Arch Linux)
+* **Symptom:** AI responses are slow; `nvidia-smi` shows 0MB VRAM used by `ollama_llama_server`.
+* **Cause:** Arch Linux's default `extra/ollama` package is compiled for CPU only.
+* **Fix:** Install `sudo pacman -S ollama-cuda`. Then restart the service: `sudo systemctl restart ollama` or `ollama serve`. Verify via `nvidia-smi` during a chat query.
 
-### Audio Recording Not Working (Meeting Capture)
-* **Cause:** `ffmpeg` cannot find PulseAudio/PipeWire audio source.
-* **Fix:** Verify `pipewire-pulse` (or `pulseaudio`) is active. Test in terminal: `pactl info`.
+### WebKitGTK Wayland Protocol Error 71 with `prime-run`
+* **Symptom:** Application crashes at startup with `Gdk-Message: Error 71 (Protocol error) dispatching to Wayland display`.
+* **Cause:** WebKitGTK DMA-BUF rendering conflict with NVIDIA proprietary drivers under Wayland.
+* **Fix:** Omni-Dashboard contains a built-in guard in `src-tauri/src/main.rs`. Alternatively, launch without `prime-run` (Tauri UI on iGPU, Ollama on dGPU), or set:
+  ```bash
+  export WEBKIT_DISABLE_DMABUF_RENDERER=1
+  npm run tauri dev
+  ```
 
-### "link.exe not found" Error (Windows only)
-* **Cause:** You skipped installing the MSVC C++ Build Tools in Step 6.1.
-* **Fix:** Open Visual Studio Installer -> Workloads -> Check "Desktop development with C++" -> Modify/Install.
+### Music Player Fails to Download or Play (Linux)
+* **Symptom:** YouTube download errors out or audio does not play.
+* **Cause:** Missing `yt-dlp`, `ffmpeg`, or GStreamer plugins.
+* **Fix:** Ensure all GStreamer codecs and `yt-dlp` are present:
+  ```bash
+  sudo pacman -S yt-dlp ffmpeg gst-plugins-base gst-plugins-good gst-plugins-bad gst-libav pipewire-pulse
+  ```
 
-### "Network request failed" when talking to the AI
-* **Cause:** Your Ollama app is closed or not running in the background.
-* **Fix:** Open your terminal and type `ollama serve` to manually turn on the AI listener.
+### Screen Capture Not Working on Wayland
+* **Cause:** Missing Wayland screen capture utility.
+* **Fix:** Install `grim` (`sudo pacman -S grim`). On X11, install `scrot` or `imagemagick`.
 
-### Database is "Locked" or Freezing
-* **Cause:** The invisible background observer thread and your chat thread tried to write data at the exact same millisecond. 
-* **Fix:** Omni-Core uses SQLite WAL (Write-Ahead Logging) to prevent this. If it happens, simply restart the app.
+### Full Factory Reset Procedure
+* If you ever wish to completely wipe the local database and reset Omni-Core to a brand new out-of-the-box state, navigate to **Settings $\to$ Danger Zone $\to$ Full Factory Reset**. This drops all 20 tables, wipes temporary memory stores, cleans audio caches, vacuums storage, and reinitializes fresh defaults safely.
 
 ---
 ## 8. Images of Project:
@@ -584,10 +647,12 @@ Copyright (C) 2026 Koundinya Gajulapalli
 ADDITIONAL TERMS UNDER GPLv3 SECTION 7
 ===============================================================================
 
-1. Mandatory Title Preservation (§7c):
+1. Mandatory Title Preservation (Section 7c):
    Any modified version, derivative work, or reproduction of this software that 
-   is distributed or published must explicitly retain and prominently display 
-   the phrase "Omni-Dashboard" within its primary title and naming identifiers.
+   is distributed or published across any operating system (including Linux, 
+   Windows, or macOS distributions) must explicitly retain and prominently display 
+   the phrase "Omni-Dashboard" within its primary title, binary name, package 
+   metadata, and naming identifiers.
 
 2. Visible User-Facing Attribution (§7b):
    Distributors and developers of modified versions must preserve and display 
