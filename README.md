@@ -1,75 +1,121 @@
-# Omni-Dashboard (Omni-Core) 
+# Omni-Dashboard (Omni-Core)
 
-> **Omni-Dashboard is an autonomous, cross-platform (Linux & Windows), local-first productivity app and your very own AI helper. It features a background observer, strict data sovereignty, dedicated GPU acceleration, and a PiecesOS-style live memory DB designed to get that discipline to Workmaxx/Gradesmaxx.**
+> **An autonomous, cross-platform (Linux & Windows), local-first productivity ecosystem and intelligent desktop assistant. Featuring real-time behavioral telemetry, strict data sovereignty, dedicated GPU acceleration, and a live memory database designed for sustained focus and deep work.**
 
-Welcome to the edge of productivity. If you are a student, a developer, or a professional who's tired of paying for ten different subscription apps, constantly getting distracted, and worrying about corporations harvesting your private data, then **Omni-Core is your ultimate solution.**
+Welcome to the edge of personal productivity. Omni-Dashboard provides an all-in-one, completely offline workspace that replaces fragmented, cloud-dependent SaaS subscriptions with an ultra-responsive desktop application. Built with **Tauri v2** and a **Rust** Tokio core, it pairs a local embedded SQLite database with local Large Language Models (LLMs) served through **Ollama**—ensuring that every task, note, document, and chat remains strictly on your device.
 
-## Why this fits in (For the Hack Club)
+---
 
-Omni-Dashboard completely replaces fragmented, cloud-dependent SaaS applications with a unified, hyper-fast, cross-platform, AND offline platform. Built with **Tauri v2** and a **Rust** backend, it pairs an embedded database with multiple local AI models powered by **Ollama** (requiring a local Ollama server with models like `llama3.2:3b`, `qwen2.5-coder:3b`, etc.). 
+## 🌐 Product Overview
 
-Beyond standard task management, Omni-Core introduces the **Observer Effect**: an un-bypassable background tracker that logs your active screen time across Linux (X11 & Wayland) and Windows, categorizes your behavior (Deep Work vs. Distraction), and streams this live context directly into the AI's neural memory. **The AI knows what you are doing in real-time.** It provides accountability, auto-generated flashcards, automated meeting summaries, and offline music playback—all without sending a single byte of your data to the cloud.
+Modern productivity tools are increasingly fragmented, locked behind monthly subscriptions, and reliant on corporate servers that scrape user data. Omni-Dashboard solves this by unifying essential productivity systems into a single, offline platform:
+
+* **Autonomous Neural Action Bridge:** An LLM that doesn't just chat, but directly creates tasks, populates calendar events, configures Pomodoro focus intervals, and organizes study material autonomously.
+* **The Observer Effect:** An unobtrusive background tracker that monitors active window time across both Linux and Windows, automatically categorizing behavior into Deep Work vs. Distractions and hydrating the AI's short-term memory with real-time context.
+* **Local RAG & Textbook Intelligence:** On-device document ingestion for academic textbooks and class notes, citing page numbers directly from local PDFs without external APIs.
+* **Local-First Audio Engine:** Zero-cloud text-to-speech synthesis (Piper neural ONNX models) and a built-in offline music vault powered by native stream extraction (`yt-dlp`).
+* **Hardware-Aware Acceleration:** Automatic telemetry monitoring for CPU, RAM, and dedicated NVIDIA GPU VRAM, including adaptive context window management for entry-level laptops (e.g., 2GB NVIDIA GeForce MX450).
+* **Strict Data Sovereignty:** Absolute local ownership with zero telemetric phone-home, backed by a one-click **Full Factory Reset** in Settings.
 
 ---
 
 ## 📋 Table of Contents
-1. [System Architecture & Design Philosophy](#1-system-architecture--design-philosophy)
-2. [Deep Dive: Core Engineering Modules](#2-deep-dive-core-engineering-modules)
-   - [2.1 Autonomous Neural Action Bridge (How the AI "Does" Things)](#21-autonomous-neural-action-bridge)
-   - [2.2 Local RAG & PDF Textbook Engine (The AI Study Buddy)](#22-local-rag--pdf-textbook-engine)
-   - [2.3 System Telemetry, GPU Acceleration & Dynamic VRAM Purging](#23-system-telemetry-gpu-acceleration--dynamic-vram-purging)
-   - [2.4 Multimodal Audio & Zero-Cloud TTS Pipeline (Offline Spotify + Voices)](#24-multimodal-audio--zero-cloud-tts-pipeline)
-   - [2.5 The Observer Effect: Cross-Platform Telemetry & Live Memory](#25-the-observer-effect-cross-platform-telemetry--live-memory)
-   - [2.6 Advanced Automation: Flashcards & Auto-Summaries](#26-advanced-automation-flashcards--auto-summaries)
-   - [2.7 Full Factory Reset & Data Sovereignty](#27-full-factory-reset--data-sovereignty)
-3. [Relational Database Schema (SQLite WAL)](#3-relational-database-schema-sqlite-wal)
-4. [AI Persona Engine & Prompt Matrix](#4-ai-persona-engine--prompt-matrix)
-5. [Tauri IPC API Reference (For Developers)](#5-tauri-ipc-api-reference)
-6. [Comprehensive Setup & Build Protocol (Arch Linux & Windows)](#6-comprehensive-setup--build-protocol)
-7. [Troubleshooting & Hardware Acceleration Notes](#7-troubleshooting--hardware-acceleration-notes)
-8. [Images of Project](#8-images-of-project)
-9. [License & Terms of Use](#9-license--terms-of-use)
+1. [Cross-Platform Architecture & Guidelines](#1-cross-platform-architecture--guidelines)
+2. [System Architecture & Data Flow](#2-system-architecture--data-flow)
+3. [Deep Dive: Core Engineering Modules](#3-deep-dive-core-engineering-modules)
+   - [3.1 Autonomous Neural Action Bridge](#31-autonomous-neural-action-bridge)
+   - [3.2 Local RAG & Academic Document Engine](#32-local-rag--academic-document-engine)
+   - [3.3 Hardware Telemetry, GPU Acceleration & Adaptive VRAM Management](#33-hardware-telemetry-gpu-acceleration--adaptive-vram-management)
+   - [3.4 Multimodal Audio & Zero-Cloud Voice Synthesis](#34-multimodal-audio--zero-cloud-voice-synthesis)
+   - [3.5 The Observer Effect: Real-Time Context Engine](#35-the-observer-effect-real-time-context-engine)
+   - [3.6 Study & Focus Automation](#36-study--focus-automation)
+   - [3.7 Full Factory Reset & Data Sovereignty](#37-full-factory-reset--data-sovereignty)
+4. [Relational Database Schema (SQLite WAL)](#4-relational-database-schema-sqlite-wal)
+5. [AI Persona Engine & Prompt Matrix](#5-ai-persona-engine--prompt-matrix)
+6. [Tauri IPC API Reference](#6-tauri-ipc-api-reference)
+7. [Comprehensive Setup & Installation Protocol](#7-comprehensive-setup--installation-protocol)
+   - [7.1 Linux Setup (Arch Linux, Ubuntu/Debian, Fedora)](#71-linux-setup)
+   - [7.2 Windows Setup (Windows 10 / 11)](#72-windows-setup)
+   - [7.3 Ollama Local AI Configuration](#73-ollama-local-ai-configuration)
+   - [7.4 Piper TTS Runtime Setup](#74-piper-tts-runtime-setup)
+   - [7.5 Development & Hybrid GPU Execution](#75-development--hybrid-gpu-execution)
+   - [7.6 Production Release Packaging](#76-production-release-packaging)
+8. [Troubleshooting & Operational Notes](#8-troubleshooting--operational-notes)
+9. [Application Showcase & Gallery](#9-application-showcase--gallery)
+10. [License & Terms of Use](#10-license--terms-of-use)
 
 ---
 
-## 1. 🏛️ System Architecture & Design Philosophy
+## 1. 🔀 Cross-Platform Architecture & Guidelines
 
-Omni-Dashboard keeps a strict **Local-First Architecture (LFA)**, thinking of your computer as an impenetrable fortress. There are no API keys, no cloud syncing, or data harvesting. 
+Omni-Dashboard is engineered as a **single, unified codebase** that runs natively on both **Linux** (supporting Wayland and X11 display servers) and **Windows** (10 and 11) without source-level conflicts or code forks.
 
-All application state (your tasks), vector searchs (how the AI finds information in your textbooks), user screens (what apps you are using), and chat context remain strictly confined to your laptop (or device). It uses asynchronous `tokio` threads (a Rust tool that allows multiple things to happen at once without freezing the app) to prevent the user interface from freezing when the AI is thinking hard too.
+### 1.1 Comparative Implementation Matrix
+
+All platform divergences are abstracted at the Rust backend layer using compile-time feature gates (`#[cfg(target_os = "...")]`):
+
+| Capability | Linux Implementation | Windows Implementation | Architectural Reason |
+| :--- | :--- | :--- | :--- |
+| **Window Telemetry (Observer)** | [`active-win-pos-rs`](file:///home/koundinyag/omni-dashboard/src-tauri/src/capture/accessibility.rs#L86-L134) (supports Wayland & X11) | Native Win32 API & `uiautomation` COM walker | Linux uses compositor protocol queries; Windows uses Win32 `GetForegroundWindow` & UIAutomation COM. |
+| **Cargo Dependencies** | Standard Unix crates | `[target.'cfg(windows)'.dependencies]` (`uiautomation`, `windows`) | Prevents unneeded Win32 C/COM bindings from compiling or failing on Linux systems. |
+| **Screen Capture** | [`grim`](file:///home/koundinyag/omni-dashboard/src-tauri/src/main.rs#L2854-L2870) (Wayland) $\to$ `scrot` $\to$ `import` (X11) | PowerShell `System.Drawing` script | Wayland requires protocol capture via `grim`; Windows uses .NET GDI handles. |
+| **Meeting Audio Loopback** | PulseAudio / PipeWire (`-f pulse -i default`) | DirectShow (`-f dshow -i audio=Stereo Mix`) | Linux interfaces through the PulseAudio monitor source; Windows routes via DirectShow Stereo Mix. |
+| **Audio Playback Engine** | `rodio` / PulseAudio & ALSA | `rodio` / WASAPI | Platform-agnostic playback via standard Rust audio abstractions. |
+| **Piper TTS Binary** | Resolves `piper/piper/piper` or system `$PATH` | Resolves `piper/piper/piper.exe` | Binary executable suffix and execution path resolution. |
+| **Process Spawning** | Standard non-blocking stdio pipelines | `CREATE_NO_WINDOW` (`0x08000000`) flag | Hides command prompts on Windows without breaking Linux stdout/stderr pipes. |
+| **WebKitGTK Wayland Guard** | Sets `WEBKIT_DISABLE_DMABUF_RENDERER=1` under PRIME | Not applicable (WebView2) | Resolves WebKitGTK DMA-BUF Wayland protocol crashes on NVIDIA hybrid graphics. |
+| **Database Engine** | Embedded SQLite (`rusqlite` bundled) | Embedded SQLite (`rusqlite` bundled) | Self-contained C compilation via MSVC or GCC; zero external SQLite installation needed. |
+| **Binary Packages** | `.AppImage`, `.deb` | `.msi`, `.exe` | Tauri v2 multi-target bundling. |
+
+### 1.2 Developer Guidelines for Cross-Platform Integrity
+
+When contributing or extending features in Omni-Dashboard, adhere strictly to the following standards:
+
+1. **Use Target Gates for OS-Specific Code:**
+   * Always guard Windows-only code with `#[cfg(target_os = "windows")]`.
+   * Always guard Linux-only code with `#[cfg(target_os = "linux")]` or `#[cfg(not(target_os = "windows"))]`.
+2. **Never Add Windows-Only Crates Globally:**
+   * Place Windows-specific crates strictly under `[target.'cfg(windows)'.dependencies]` in [`src-tauri/Cargo.toml`](file:///home/koundinyag/omni-dashboard/src-tauri/Cargo.toml).
+3. **Always Use `apply_hidden_flag(&mut Command)`:**
+   * When invoking external executables (such as `yt-dlp`, `ffmpeg`, or `piper`), apply the `apply_hidden_flag` utility. On Windows, this attaches `creation_flags(0x08000000)` to silence console popups; on Linux, it preserves non-blocking standard streams so processes do not hang.
+4. **Prefer Cross-Platform Path Primitives:**
+   * Never hardcode backslashes (`\`) or forward slashes (`/`). Always construct paths using `std::path::PathBuf` and `.join(...)`.
+   * Use `std::env::temp_dir()` and Tauri's `app.path().app_data_dir()` for runtime caches.
+5. **Keep Frontend Code 100% OS-Agnostic:**
+   * The React/TypeScript layer should never branch on operating system heuristics. OS-dependent capabilities must always be abstracted behind uniform Tauri IPC commands.
+
+---
+
+## 2. 🏛️ System Architecture & Data Flow
+
+Omni-Dashboard adheres strictly to a **Local-First Architecture (LFA)**. State mutations, vector heuristics, and background processes are processed entirely within the local host environment.
 
 ```text
 ┌───────────────────────────────────────────────────────────────────────────────────────────┐
 │                                    REACT / TS FRONTEND                                    │
-│   (Vite, Tailwind CSS, Lucide Icons, Modern Dark UI, High-Frequency Polling Hooks)        │
-│   This is the beautiful visual layer you interact with, built with standard web tech.     │
+│   (Vite, Tailwind CSS, Lucide Icons, Modern Dark UI, High-Frequency Telemetry Hooks)      │
 └────────────────────────────────────────────┬──────────────────────────────────────────────┘
                                              │
-                                             │ Tauri IPC Bridge (Asynchronous payloads)
-                                             │ (The invisible messenger carrying your clicks)
+                                             │ Tauri v2 IPC Bridge (Asynchronous Tokio RPC)
                                              ▼
 ┌───────────────────────────────────────────────────────────────────────────────────────────┐
 │                                   RUST TAURI CORE DAEMON                                  │
-│                               (The high-speed brain of the app)                           │
 │                                                                                           │
 │  ┌───────────────────────┐  ┌───────────────────────┐  ┌───────────────────────────────┐  │
-│  │   Context Hydrator    │  │  Fuzzy Action Parser  │  │  Telemetry Monitor (Tokio)    │  │
-│  │ (Live Memory Inject)  │  │   ([ACT:...] Loop)    │  │ (Watches what apps you use)   │  │
+│  │   Context Hydrator    │  │  Fuzzy Action Parser  │  │   Active Window Observer      │  │
+│  │ (Live Memory Inject)  │  │   ([ACT:...] Loop)    │  │   (Wayland / X11 / Win32)     │  │
 │  └───────────┬───────────┘  └───────────┬───────────┘  └──────────────┬────────────────┘  │
 └──────────────┼──────────────────────────┼─────────────────────────────┼───────────────────┘
                │                          │                             │
                ▼                          ▼                             ▼
 ┌──────────────────────────┐  ┌──────────────────────────┐  ┌───────────────────────────────┐
-│  EMBEDDED SQLITE DB      │  │  OLLAMA REST API         │  │  PIPER TTS / Rodio / cpal     │
+│  EMBEDDED SQLITE DB      │  │  LOCAL OLLAMA ENGINE     │  │  PIPER TTS / Rodio / cpal     │
 │  (WAL Mode Enabled)      │  │  (`127.0.0.1:11434`)     │  │  (ONNX Runtime / Loopback)    │
-│  (Your private vault)    │  │  (The local AI models)   │  │  (The voice & music engines)  │
+│  (Zero-Cloud Local Vault)│  │  (CUDA / DirectML Accel) │  │  (Audio & Voice Pipeline)     │
 └──────────────────────────┘  └──────────────────────────┘  └───────────────────────────────┘
-
-**This and a few of the following README diagrams are generated by AI**
 ```
 
-### High-Fidelity Data Flow Sequence (How a Command Works)
-Usually, AI like ChatGPT just spits out text, and *you* have to copy-paste it into your calendar. Omni-Core skips the you part entirely.
+### High-Fidelity Data Flow Sequence
 
 ```mermaid
 sequenceDiagram
@@ -77,31 +123,31 @@ sequenceDiagram
     actor User
     participant Frontend as React UI
     participant Daemon as Rust Tokio Core
-    participant SQLite as Immutable DB
-    participant AI as Local Ollama API
+    participant SQLite as Embedded SQLite DB
+    participant AI as Local Ollama Service
 
-    User->>Frontend: Issues prompt ("I've been studying physics, schedule a block.")
-    Frontend->>Daemon: invoke('ask_ollama', { messages, persona... })
-    Daemon->>SQLite: Query Immutable Telemetry (What has the user been doing for 2 hours?)
-    SQLite-->>Daemon: Returns "VS Code: 90m", "YouTube: 5m"
-    Daemon->>Daemon: Hydrate System Context + Observer Effect Summary
+    User->>Frontend: Issues natural language command ("Schedule a 2hr study block for Linear Algebra")
+    Frontend->>Daemon: invoke('ask_ollama', { messages, persona, modelTier... })
+    Daemon->>SQLite: Query Immutable Telemetry (What has user focused on today?)
+    SQLite-->>Daemon: Returns activity records (e.g., "VS Code: 85m", "PDF Reader: 40m")
+    Daemon->>Daemon: Hydrate system prompt with Live Memory & telemetry context
     Daemon->>AI: POST /api/chat (Injected System Prompt + User Query)
-    AI-->>Daemon: AI Response Text + Tag: [ACT:CALENDAR:1:15:0:17:0:Physics]
-    Daemon->>Daemon: Multi-Tag Fuzzy Parser extracts timestamps via string-slicing
-    Daemon->>SQLite: INSERT INTO calendar_events (Start: 15:00, End: 17:00, Title: "Physics")
-    Daemon-->>Frontend: Cleaned AI Markdown Response + Action Executed Status
-    Frontend-->>User: Renders UI response & updates Timetable View automatically
+    AI-->>Daemon: Response stream with bracketed tag: [ACT:CALENDAR:0:14:0:16:0:Linear Algebra]
+    Daemon->>Daemon: Zero-Math Fuzzy Action Parser extracts parameters & computes timestamps
+    Daemon->>SQLite: INSERT INTO calendar_events (start: 14:00, end: 16:00, title: "Linear Algebra")
+    Daemon-->>Frontend: Cleaned response Markdown + Action Executed Status
+    Frontend-->>User: Displays AI response & immediately updates interactive Timetable
 ```
 
 ---
 
-## 2. 🔬 Deep Dive: Core Engineering Modules
+## 3. 🔬 Deep Dive: Core Engineering Modules
 
-### 2.1 Autonomous Neural Action Bridge (How the AI "Does" Things)
-Traditional AI chat systems are passive. Well, Omni-Core isn't "passive". It uses a high-reliability **Zero-Math Fuzzy Parsing Tag Execution Bridge** to let the AI actually *do* work for you.
+### 3.1 Autonomous Neural Action Bridge
+Omni-Dashboard utilizes a high-reliability **Zero-Math Fuzzy Parsing Tag Execution Bridge** that transforms natural-language conversational output into atomic database mutations.
 
-#### Tag Format Specifications
-Small, highly compressed AI models (which you need if you are running them on a normal student laptop) often hallucinate or break when trying to write complex code. To ensure 100% execution reliability, Omni-Core forces the AI to use simple, strict bracketed tags:
+#### Bracketed Tag Format Specifications
+Small, quantized local models (such as 3B–4B parameter LLMs) can hallucinate or fail when tasked with outputting verbose JSON structures. Omni-Dashboard enforces ultra-compact bracketed action tags:
 1. **Task Creation:** `[ACT:TASK:<QUADRANT_1_TO_4>:<TITLE>]`
 2. **Calendar Scheduling:** `[ACT:CALENDAR:<OFFSET_DAYS>:<START_HOUR>:<START_MIN>:<END_HOUR>:<END_MIN>:<TITLE>]`
 3. **Pomodoro Timer Ignition:** `[ACT:TIMER:<FOCUS_MINUTES>:<BREAK_MINUTES>]`
@@ -109,70 +155,66 @@ Small, highly compressed AI models (which you need if you are running them on a 
 5. **Task Completion:** `[ACT:COMPLETE:<TASK_ID>]`
 
 #### Parsing Engine Mechanics
-* **Regex-Free Tokenizer:** The Rust daemon will scan the AI's response looking for `[ACT:`. This is mathematically cheaper for your computer's CPU and highly resilient to AI mistakes.
-* **AM/PM & String Normalization:** If the AI makes a mistake and types "5 PM" instead of the 24-hour "17:00", the engine automatically catches it, cleans the text, and calculates the exact mathematical timestamp.
-* **Concurrency Safety:** If the AI creates 5 tasks at once, the system applies a tiny 2-millisecond delay (`std::thread::sleep`) between saving each one to guarantee they all get a unique ID in your database without colliding.
+* **Regex-Free Tokenizer:** The Rust daemon scans the raw text stream for `[ACT:` delimiters via zero-copy string slices, ensuring minimal CPU overhead.
+* **Timestamp Normalization:** The parser handles mixed 12-hour and 24-hour inputs (e.g., converting "4 PM" to mathematical millisecond epoch timestamps relative to the current local date).
+* **Collision Prevention:** Multi-action blocks apply micro-sleep delays between insertions to guarantee monotonic SQLite primary keys.
 
 ---
 
-### 2.2 Local RAG & PDF Textbook Engine (The AI Study Buddy)
-"RAG" stands for Retrieval-Augmented Generation. In plain English, it means giving the AI the ability to read your specific documents. Therefore,This can handle massive academic textbook ingestion completely on-device.
-
-1. **Extraction & Chunking:** When you upload a 500-page Biology PDF, the `lopdf` tool scans every single page, stripping out the visual formatting to grab the pure text.
-2. **Persistence:** These pages are instantly stored in your local database.
-3. **Keyword Heuristic (Smart Searching):** When you attach a textbook to the chat and ask a question, the app extracts the important words from your question. It then mathematically scores every page in the book based on how often those words appear. It grabs the top 5 most relevant pages and secretly feeds them to the AI before it answers. **This forces the AI to cite specific page numbers from your actual textbook, eliminating fake answers (hallucinations).**
-
----
-
-### 2.3 System Telemetry, GPU Acceleration & Dynamic VRAM Purging
-Running Artificial Intelligence locally requires careful management of System RAM and Dedicated VRAM (Video Memory on your Graphics Card). Omni-Core includes a comprehensive hardware-aware engine to maximize performance across modern desktop and budget laptop hardware.
-
-* **Dual-Engine System & GPU Diagnostics:** The Rust daemon continuously queries system memory and dedicated GPU metrics (via `nvidia-smi` on NVIDIA systems and `sysinfo` for CPU/RAM). The UI displays real-time CPU utilization, system RAM usage, GPU VRAM allocation (used vs. total), and GPU compute percentage.
-* **Low-VRAM Adaptive Context Clamping:** Small dedicated GPUs (such as the **NVIDIA GeForce MX450 2GB GDDR6, TU117 architecture**) easily run out of memory if an LLM allocates huge context windows (e.g., 16k tokens requires $\approx$ 3.8 GB VRAM, triggering a slow CPU fallback). Omni-Core automatically detects GPUs with $\le$ 3 GB VRAM and clamps the Ollama context window (`num_ctx`) to **4096 tokens**. This guarantees that 100% of the model layers and KV cache stay within VRAM, delivering 4–5$\times$ faster inferencing speeds with zero crashing.
-* **Dynamic VRAM Purging:** When switching between different AI tasks (e.g., moving from general chat with `llama3.2` to coding with `qwen2.5-coder`), Omni-Core actively invokes `flush_vram`. It sends an eviction payload to Ollama (`keep_alive: 0`), flushing the prior model from VRAM before spinning up the next model.
+### 3.2 Local RAG & Academic Document Engine
+The Retrieval-Augmented Generation (RAG) module provides document analysis directly on-device without cloud ingestion:
+1. **PDF Text Extraction:** Uploaded PDF textbooks and notes are parsed using `lopdf`, extracting structured textual streams on a per-page basis.
+2. **Page-Indexed Storage:** Extracted text is indexed into the `textbook_pages` relational table.
+3. **Keyword Heuristic Retrieval:** When a textbook is attached to a chat session, Omni-Core scores pages against query terms using keyword frequency and semantic matching, feeding the top 5 most relevant pages directly into the model context.
+4. **Hallucination Elimination:** The model is strictly instructed to cite specific page numbers from the ingested document, ensuring answers are grounded in textbook material.
 
 ---
 
-### 2.4 Multimodal Audio & Zero-Cloud TTS Pipeline (Offline Spotify + Voices)
-We provide lightning-fast voice generation and a built-in music player that works seamlessly on both Linux and Windows.
+### 3.3 Hardware Telemetry, GPU Acceleration & Adaptive VRAM Management
+Running LLMs on personal laptops requires precise resource budgeting to avoid thermal throttling, out-of-memory errors, and sluggish inferencing.
 
-* **Cross-Platform Piper TTS Engine:** The AI speaks using offline neural ONNX voice models. The system automatically selects the platform-appropriate binary (`piper` on Linux or `piper.exe` on Windows) and adjusts cadence dynamically (`Length Scale = 200 / Words Per Minute`).
-* **YT-DLP Offline Vault:** Omni-Core allows searching YouTube Music directly inside the app. Clicking download invokes native `yt-dlp` and `ffmpeg` to fetch and tag raw `.mp3` files directly into your local app storage. Platform-specific execution flags (silent flags on Windows, non-blocking pipe streams on Linux) ensure smooth, unthrottled downloads.
-* **Offline Flow-State Playback:** Songs play locally via Rodio and platform audio backends (PulseAudio / PipeWire on Linux, WASAPI on Windows) with full offline seeking, playlist creation, and volume control.
-
----
-
-### 2.5 The Observer Effect: Cross-Platform Telemetry & Live Memory
-The psychological foundation of Omni-Dashboard is built for accountability and deep focus.
-
-1. **Cross-Platform Active Window Detection:**
-   * **Linux:** Uses `active-win-pos-rs` to read active window titles and application names across both **Wayland** (via compositor protocols/XWayland) and **X11**.
-   * **Windows:** Uses native Win32 APIs and UIAutomation COM walkers.
-2. **Behavioral Categorization:** Every 10 seconds, the background thread categorizes your active foreground activity into **"Deep Work"** (VS Code, terminal, PDF reader), **"Research"**, or **"Distraction"** (YouTube, social media, games).
-3. **Immutable Persistence:** Activity entries are written into the `immutable_telemetry` SQLite table. Under normal operation, distraction logs cannot be retroactively erased or falsified.
-4. **Live Memory Stream:** Omni-Core summarizes your recent behavioral history and injects it into Ollama's active system prompt. If you've been working diligently, your AI assistant adjusts to support your flow; if you've been procrastinating, strict personas (like Victor or Chloe) will call you out immediately.
+* **Dual-Engine System Diagnostics:** The Rust daemon queries system RAM via `sysinfo` and dedicated GPU parameters via `nvidia-smi`. The dashboard displays real-time CPU usage, system RAM, GPU compute utilization, and active VRAM allocation.
+* **Low-VRAM Adaptive Context Clamping:** On entry-level discrete GPUs (such as the **NVIDIA GeForce MX450 2GB GDDR6, TU117 architecture**), large context windows (e.g., 16,384 tokens) cause the KV cache to exceed available VRAM, forcing Ollama into slow CPU fallback mode. Omni-Core automatically detects GPUs with $\le$ 3GB VRAM and caps `num_ctx` to **4096 tokens**. This guarantees that 100% of the model layers and KV cache remain in VRAM, delivering 4–5$\times$ faster generation.
+* **Dynamic VRAM Purging:** When switching personas or tasks (e.g., transitioning from general chat on `llama3.2` to code generation on `qwen2.5-coder`), Omni-Core invokes `flush_vram`, dispatching an eviction payload (`keep_alive: 0`) to release previously loaded model weights from graphics memory.
 
 ---
 
-### 2.6 Advanced Automation: Flashcards & Auto-Summaries
-* **Auto-Flashcard Generation:** Analyzes markdown study notes and RAG textbook extracts to generate structured flashcard decks for active recall.
-* **Meeting & Class Summarization:** Hit "AI Summarize" on any note to generate bulleted takeaways, action items, and executive summaries via your local LLM.
-* **Audio Capture Framework:** Configured for local audio capture (PulseAudio/PipeWire monitor sources on Linux, WASAPI loopback on Windows) for on-device transcription.
+### 3.4 Multimodal Audio & Zero-Cloud Voice Synthesis
+Omni-Dashboard integrates on-device voice generation and an offline music player for deep focus sessions:
+
+* **Neural Voice Synthesis (Piper TTS):** Synthesizes natural speech offline using ONNX voice models. Cadence is dynamically adjusted based on user-configured words-per-minute (`Length Scale = 200 / WPM`).
+* **YT-DLP Offline Vault:** Users can query YouTube Music from within the application. Downloads are processed using native `yt-dlp` and `ffmpeg`, extracting audio directly into local MP3 storage.
+* **Offline Playback Engine:** Songs are decoded and played locally via Rodio and platform backends (PulseAudio/PipeWire on Linux, WASAPI on Windows) with playlist curation and background playback.
 
 ---
 
-### 2.7 Full Factory Reset & Data Sovereignty
-In keeping with strict data sovereignty, Omni-Core puts the user in total control of their data.
-
-* **One-Click Nuclear Reset:** Located in **Settings $\to$ Danger Zone**, the **Full Factory Reset** button gives users the ability to completely purge all application data with a single click.
-* **Safe Clean-Slate Wipe:** The backend drops all 20 relational database tables, performs an SQLite `VACUUM` to zero out file footprint, deletes temporary live memory stores (`omni_memory.db`), cleans cached downloaded audio files, and re-executes clean schema initialization with default settings.
-* **No Broken State:** The application remains running and immediately returns to pristine out-of-the-box defaults without requiring manual terminal commands or config file deletions.
+### 3.5 The Observer Effect: Real-Time Context Engine
+Built to maintain accountability, the background observer tracks active application usage:
+1. **Multi-Compositor Window Detection:** Captures active window titles and process identifiers every 10 seconds via `active-win-pos-rs` on Linux (Wayland & X11) and Win32 UIAutomation on Windows.
+2. **Behavioral Categorization:** Automatically categorizes foreground windows into **"Deep Work"** (IDE, terminal, text editor), **"Research"** (academic papers, docs), or **"Distraction"** (social media, video streaming).
+3. **Immutable Logging:** Activity is committed to the `immutable_telemetry` table in SQLite.
+4. **Live Memory Stream:** Summarized telemetry is injected into active chat sessions, allowing AI personas to acknowledge user progress or offer targeted coaching.
 
 ---
 
-## 3. 💾 Relational Database Schema (SQLite WAL)
+### 3.6 Study & Focus Automation
+* **Auto-Flashcard Generation:** Automatically extracts key concepts from study notes and textbook chapters, generating spaced-repetition flashcard decks.
+* **One-Click Note Summaries:** Formats lecture notes and study documents into executive summaries and action items using local models.
+* **Meeting Transcription Pipeline:** Captures system audio loopback for offline speech-to-text processing.
 
-The database utilizes SQLite configured for Write-Ahead Logging (WAL). In simple terms: it allows the invisible background telemetry thread to write your screen-time logs at the exact same time you are reading a chat message, without locking up or crashing the app.
+---
+
+### 3.7 Full Factory Reset & Data Sovereignty
+In keeping with strict data sovereignty, Omni-Dashboard puts the user in total control of their data:
+* **One-Click Nuclear Reset:** Located in **Settings $\to$ Danger Zone**, the **Full Factory Reset** button gives users the ability to completely purge all local application state with a single confirmation.
+* **Complete State Sanitization:** Safely drops all 20 relational database tables, performs an SQLite `VACUUM` to reclaim disk space, purges temporary memory databases (`omni_memory.db`), cleans offline music caches, and reinitializes fresh tables with default configuration.
+* **No Broken State:** The application remains running and returns to a pristine out-of-the-box state immediately.
+
+---
+
+## 4. 💾 Relational Database Schema (SQLite WAL)
+
+The local database runs SQLite in Write-Ahead Logging (WAL) mode, enabling concurrent read and write operations across background telemetry threads and interactive UI sessions.
 
 ```sql
 CREATE TABLE IF NOT EXISTS tasks (
@@ -283,8 +325,8 @@ CREATE TABLE IF NOT EXISTS calendar_events (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
-    start_time INTEGER NOT NULL, -- Unix epoch time in milliseconds
-    end_time INTEGER NOT NULL,   -- Unix epoch time in milliseconds
+    start_time INTEGER NOT NULL, -- Unix epoch in milliseconds
+    end_time INTEGER NOT NULL,   -- Unix epoch in milliseconds
     event_type TEXT NOT NULL,
     tags TEXT NOT NULL DEFAULT '[]',
     color TEXT NOT NULL DEFAULT '#3b82f6',
@@ -296,7 +338,7 @@ CREATE TABLE IF NOT EXISTS immutable_telemetry (
     timestamp INTEGER NOT NULL,
     app_name TEXT NOT NULL,
     window_title TEXT NOT NULL,
-    category TEXT NOT NULL -- Tags: "Deep Work", "Research", "Leisure", "Distraction"
+    category TEXT NOT NULL -- "Deep Work", "Research", "Leisure", "Distraction"
 );
 
 CREATE TABLE IF NOT EXISTS live_memory_summaries (
@@ -304,124 +346,142 @@ CREATE TABLE IF NOT EXISTS live_memory_summaries (
     timestamp INTEGER NOT NULL,
     summary_text TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS goals (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    target_date INTEGER NOT NULL,
+    completed INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS flashcard_decks (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS flashcards (
+    id TEXT PRIMARY KEY,
+    deck_id TEXT NOT NULL,
+    front TEXT NOT NULL,
+    back TEXT NOT NULL,
+    box INTEGER NOT NULL DEFAULT 1,
+    next_review INTEGER NOT NULL
+);
 ```
 
 ---
 
-## 4. 🎭 AI Persona Engine & Prompt Matrix
+## 5. 🎭 AI Persona Engine & Prompt Matrix
 
-Omni-Core features 10 distinctly engineered AI personalities. Different studying situations require different coaching styles. Changing the persona literally changes the hidden "System Prompt" fed to the AI. 
+Omni-Dashboard includes 10 engineered AI personas, each dynamically modifying the LLM's system prompt and corresponding Piper neural voice model:
 
-| Persona | Gender & Style | Dynamic Voice Model | System Archetype & Behavioral Objective |
+| Persona | Archetype | Voice Model | Focus & Behavioral Objective |
 | :--- | :--- | :--- | :--- |
-| **Victor** | Strict Male | `en_US-bryce-medium` | Tactical drill-sergeant mentor. Uncompromising precision, zero fluff, demands strict task accountability. **Utilizes telemetry to harshly penalize your distractions.** |
-| **Morgan** | Strict Female | `en_US-amy-medium` | Executive strategist and professor. Focuses on intellectual rigor, logic, and rapid execution. Ideal for academic textbook extraction. |
-| **Sam** | Normal Male | `en_US-ryan-high` | Approachable roommate. Balanced guidance using clear analogies and friendly conversational tone. |
-| **Maya** | Normal Female | `en_GB-semaine-medium` | Empathetic study mentor. Structured learning support, clear organization, and articulate explanations. **Excellent for generating study flashcards.** |
-| **Leo** | Quirky Male | `en_US-joe-medium` | Sarcastic, hackathon-tier developer. Dry wit, deadpan humor, highly efficient code and problem solving. Maps perfectly to coding tasks. |
-| **Felix** | Quirky Male | `en_GB-alan-medium` | High-energy tech tinkerer. Uses analogies, pop-culture metaphors, and rapid structural breakdowns. |
-| **Ziggy** | Quirky Male | `en_US-danny-low` | Indie radio philosopher. Deep conceptual curiosity, surrealist humor, and calm problem-solving. |
-| **Nova** | Quirky Female | `en_GB-cori-high` | High-octane hype-woman. Fast-paced banter, dramatic flair, intense positive motivation. **Best utilized for maintaining momentum during long 2-hour Pomodoro study sessions.** |
-| **Aria** | Quirky Female | `en_GB-alba-medium` | Theatrical mad scientist. Treats productivity, tasks, and notes as scientific experiments. |
-| **Chloe** | Quirky Female | `en_GB-jenny_dioco-medium` | Brutally honest sister figure. Calls out procrastination instantly based on active-window telemetry, offers zero-filter advice with affectionate humor. |
+| **Victor** | Tactical Mentor | `en_US-bryce-medium` | Direct, demanding, and uncompromising. Penalizes recorded distractions and demands rigorous task execution. |
+| **Morgan** | Academic Strategist | `en_US-amy-medium` | Executive logic and high-standard academic mentorship. Ideal for textbook RAG and paper analysis. |
+| **Sam** | Balanced Peer | `en_US-ryan-high` | Casual, relatable study partner using practical analogies and balanced encouragement. |
+| **Maya** | Supportive Mentor | `en_GB-semaine-medium` | Warm, articulate, and highly organized guidance. Optimized for generating structured flashcard decks. |
+| **Leo** | Technical Developer | `en_US-joe-medium` | Pragmatic software engineer with dry, deadpan humor. Tailored for debugging, architecture, and coding tasks. |
+| **Felix** | Systems Tinkerer | `en_GB-alan-medium` | High-energy technical exploration utilizing rapid conceptual breakdowns and real-world analogies. |
+| **Ziggy** | Inquisitive Thinker | `en_US-danny-low` | Calm, exploratory problem-solving and conceptual analysis for complex or abstract subjects. |
+| **Nova** | Motivational Coach | `en_GB-cori-high` | Energetic, supportive accountability partner designed to maintain momentum during extended focus intervals. |
+| **Aria** | Empirical Scientist | `en_GB-alba-medium` | Treats productivity, study habits, and notes as structured scientific hypotheses and iterations. |
+| **Chloe** | Candid Advisor | `en_GB-jenny_dioco-medium` | Witty, zero-filter accountability. Immediately highlights recorded distractions with direct, pragmatic feedback. |
 
 ---
 
-## 5. 🔌 Tauri IPC API Reference (For Developers)
+## 6. 🔌 Tauri IPC API Reference
 
-The visual frontend interacts with the hidden Rust engine via IPC (Tauri v2 Commands). Every function is strictly typed and handles potential software errors gracefully.
+Communication between the React frontend and Rust backend occurs over typed asynchronous IPC commands.
 
-### System, Telemetry & Reset Commands
+### System, Telemetry & Reset
 ```typescript
-// System & GPU Telemetry (RAM, CPU, NVIDIA dGPU VRAM & Compute)
+// System & GPU Telemetry (CPU, RAM, NVIDIA dGPU VRAM and Compute)
 invoke("get_telemetry"): Promise<{
-  ram_total: string,
-  ram_used: string,
-  ram_percent: number,
-  cpu_count: number,
-  cpu_percent: number,
-  gpu_name: string,
-  vram_total: string,
-  vram_used: string,
-  vram_percent: number,
-  gpu_util: string,
-  has_gpu: boolean
+  ram_total: string;
+  ram_used: string;
+  ram_percent: number;
+  cpu_count: number;
+  cpu_percent: number;
+  gpu_name: string;
+  vram_total: string;
+  vram_used: string;
+  vram_percent: number;
+  gpu_util: string;
+  has_gpu: boolean;
 }>;
 
-// The Observer Effect (Cross-platform active window telemetry)
+// Active foreground window telemetry (Observer Effect)
 invoke("get_active_app_telemetry"): Promise<AppTelemetry>;
 
-// Aggregate telemetry stats for Dashboard graphs
+// Aggregated daily productivity distribution
 invoke("get_telemetry_stats"): Promise<TelemetryStats>;
 
-// Payload delivery to Ollama to unload heavy AI models instantly
+// Model cache eviction to free GPU memory
 invoke("flush_vram", { modelTier: string }): Promise<void>;
 
-// Full Factory Reset (Drops all tables, clears audio/memory caches, resets defaults)
+// Full Factory Reset (danger zone: purges DB, temporary files, audio cache)
 invoke("factory_reset"): Promise<void>;
 
-// Profile Configuration
+// Persistent User Settings
 invoke("get_settings"): Promise<UserSettings>;
 invoke("save_settings", { settings: UserSettings }): Promise<void>;
 ```
 
-### AI, Action Bridge, & Chat Commands
+### Conversational AI & RAG
 ```typescript
 invoke("ask_ollama", {
-  messages: Array<{ role: string, content: string }>,
-  persona: string,
-  modelTier: string,
-  searchWeb: boolean,
-  attachedTextbook?: TextbookAttachment,
-  currentDateStr: string,
-  currentEpochMs: number,
-  startOfTodayMs: number // Critical for calculating calendar timestamps dynamically
+  messages: Array<{ role: string; content: string }>;
+  persona: string;
+  modelTier: string;
+  searchWeb: boolean;
+  attachedTextbook?: TextbookAttachment;
+  currentDateStr: string;
+  currentEpochMs: number;
+  startOfTodayMs: number;
 }): Promise<string>;
 ```
 
-### Productivity & Calendar Matrix Commands
+### Task & Timetable Operations
 ```typescript
-//Priority Matrix Interactions
+// Priority Matrix
 invoke("get_tasks"): Promise<TaskItem[]>;
-invoke("add_task", { id: string, title: string, quadrant: number }): Promise<void>;
+invoke("add_task", { id: string; title: string; quadrant: number }): Promise<void>;
 invoke("delete_task", { id: string }): Promise<void>;
 
-// Advanced Timetable Interactions
+// Timetable / Calendar
 invoke("add_calendar_event", {
-  id: string, title: string, description: string, start_time: number,
-  end_time: number, event_type: string, tags: string[], color: string, is_all_day: boolean
+  id: string; title: string; description: string; start_time: number;
+  end_time: number; event_type: string; tags: string[]; color: string; is_all_day: boolean;
 }): Promise<void>;
-invoke("get_calendar_events_in_range", { start: number, end: number }): Promise<CalendarEventItem[]>;
+invoke("get_calendar_events_in_range", { start: number; end: number }): Promise<CalendarEventItem[]>;
 invoke("delete_calendar_event", { id: string }): Promise<void>;
 ```
 
-### Document Ingestion & Storage Commands
+### Document & Audio Pipeline
 ```typescript
-invoke("import_pdf_textbook", { filePath: string, title: string, author: string, courseId: string }): Promise<TextbookItem>;
+// PDF Textbook Extraction
+invoke("import_pdf_textbook", { filePath: string; title: string; author: string; courseId: string }): Promise<TextbookItem>;
 invoke("get_textbooks"): Promise<TextbookItem[]>;
 invoke("delete_textbook", { id: string }): Promise<void>;
-```
 
-### Audio Pipeline Commands
-```typescript
-//generate artificial voices
-invoke("read_aloud", { text: string, wpm: number, persona: string }): Promise<void>;
+// Speech Synthesis & Stream Fetching
+invoke("read_aloud", { text: string; wpm: number; persona: string }): Promise<void>;
 invoke("stop_reading"): Promise<void>;
-
-// Invokes native yt-dlp binary to rip raw .mp3 data from YouTube
-invoke("download_yt_song", { videoId: string, title: string, artist: string, duration: string, thumbnailUrl: string }): Promise<OfflineSongItem>;
+invoke("download_yt_song", { videoId: string; title: string; artist: string; duration: string; thumbnailUrl: string }): Promise<OfflineSongItem>;
 ```
 
 ---
 
-## 6. ⚙️ Comprehensive Setup & Build Protocol (Arch Linux & Windows)
+## 7. ⚙️ Comprehensive Setup & Installation Protocol
 
-Omni-Dashboard is built to run natively on both Arch Linux (and other Linux distributions) and Windows 10/11 with zero source code modifications.
+Follow the setup instructions corresponding to your operating system.
 
-### 6.1 Host System Prerequisites
+### 7.1 Linux Setup
 
-#### Linux (Arch Linux) Setup
-Install required system libraries, WebKitGTK, GStreamer, audio backends, and utilities:
+#### Arch Linux
+Install the necessary development libraries, WebKitGTK, GStreamer, audio backends, and utilities:
 ```bash
 sudo pacman -S --needed \
   base-devel \
@@ -446,63 +506,96 @@ sudo pacman -S --needed \
   git-lfs
 ```
 
-##### NVIDIA GPU Acceleration (CUDA for Ollama):
-To enable discrete GPU acceleration (e.g., NVIDIA GeForce MX450, GTX, or RTX cards):
+##### NVIDIA dGPU Acceleration (CUDA for Ollama):
+To ensure Ollama executes model inference on your discrete NVIDIA GPU:
 ```bash
-# Arch Linux CUDA-enabled Ollama and PRIME offload utility:
 sudo pacman -S ollama-cuda nvidia-prime
 ```
 > [!TIP]
-> Ensure you install `ollama-cuda` instead of generic `ollama` from the Arch repositories so Ollama offloads LLM layers to your NVIDIA GPU!
+> On Arch Linux, install `ollama-cuda` instead of the generic `ollama` package to enable CUDA acceleration.
 
-#### Windows Setup
-* **Node.js:** Version 18 or higher.
-* **Rust Toolchain:** Install via `rustup` (`rustup default stable-x86_64-pc-windows-msvc`).
-* **Visual Studio Build Tools:** Install Visual Studio 2022 Build Tools with the "Desktop development with C++" workload selected.
-* **FFmpeg & yt-dlp:** Ensure `ffmpeg` and `yt-dlp` are installed and added to your Windows system `PATH`.
-* **Git LFS:** Run `git lfs install`.
+#### Ubuntu / Debian (22.04 LTS+)
+```bash
+sudo apt-get update && sudo apt-get install -y \
+  build-essential \
+  libwebkit2gtk-4.1-dev \
+  libgtk-3-dev \
+  libsoup-3.0-dev \
+  libayatana-appindicator3-dev \
+  libssl-dev \
+  libgstreamer1.0-dev \
+  libgstreamer-plugins-base1.0-dev \
+  gstreamer1.0-plugins-good \
+  gstreamer1.0-plugins-bad \
+  gstreamer1.0-libav \
+  ffmpeg \
+  yt-dlp \
+  grim \
+  scrot \
+  nodejs \
+  npm \
+  git-lfs
+```
 
 ---
 
-### 6.2 Ollama Environment Setup
-[Ollama](https://ollama.com/) powers all local AI processing. Start the server and download the recommended model suite:
+### 7.2 Windows Setup
+
+1. **Node.js:** Install Node.js 18 or higher from [nodejs.org](https://nodejs.org/).
+2. **Rust Toolchain:** Install via `rustup` using the MSVC ABI:
+   ```powershell
+   rustup default stable-x86_64-pc-windows-msvc
+   ```
+3. **Visual Studio C++ Build Tools:** Install Visual Studio Build Tools 2022 with the **Desktop development with C++** workload enabled.
+4. **FFmpeg & yt-dlp:** Install via `winget` or `choco` and ensure they are accessible in your system `PATH`:
+   ```powershell
+   winget install Gyan.FFmpeg
+   winget install yt-dlp.yt-dlp
+   ```
+5. **Git LFS:** Run `git lfs install` in your terminal.
+
+---
+
+### 7.3 Ollama Local AI Configuration
+
+Install and launch the [Ollama](https://ollama.com/) daemon, then pull the model suite:
 
 ```bash
-# 1. Start the Ollama server
+# Start Ollama service
 ollama serve
 
-# 2. Pull the models
-# General conversational brain (Fast reasoning)
+# Pull conversational & reasoning model
 ollama pull llama3.2:3b
 
-# Coding & Logic brain (Used for math and development)
+# Pull coding & logic model
 ollama pull qwen2.5-coder:3b
 
-# High Performance brain (Ultra-fast execution)
+# Pull high-speed execution model
 ollama pull phi4-mini:latest
 
-# Vision / Image Engine (Screen inspection & hotkey pullup)
+# Pull vision & screen inspection model
 ollama pull qwen3.5:4b
 
-# Textbook Scanner brain (Used for RAG and PDFs)
+# Pull document extraction model
 ollama pull nemotron-mini:latest
 
-# Vector Embeddings engine (Required for PDF textbook search)
+# Pull embedding model for PDF retrieval
 ollama pull nomic-embed-text
 ```
 
 > [!NOTE]
-> On laptops with $\le$ 3GB VRAM (such as the GeForce MX450 2GB), Omni-Core automatically clamps the context window to `4096` tokens so the entire model fits in VRAM without spilling into slow CPU swap.
+> On laptops with $\le$ 3GB VRAM (such as the GeForce MX450 2GB), Omni-Dashboard automatically adjusts the context window to `4096` tokens to prevent model weights from falling back to CPU memory.
 
 ---
 
-### 6.3 Piper TTS Runtime Setup
-Verify the `piper` directory structure within the `src-tauri` folder:
+### 7.4 Piper TTS Runtime Setup
+
+Verify that the `piper` directory exists within `src-tauri`:
 ```text
 src-tauri/
 └── piper/
     ├── piper/
-    │   ├── piper        # Linux executable (chmod +x)
+    │   ├── piper        # Linux binary (chmod +x)
     │   └── piper.exe    # Windows executable
     └── voices/
         ├── en_US-ryan-high.onnx
@@ -510,91 +603,77 @@ src-tauri/
         ├── en_US-bryce-medium.onnx
         └── ... (.json config files alongside .onnx)
 ```
-On Arch Linux, you can also install piper via AUR (`yay -S piper-tts-bin`) or symlink it into the above directory.
+On Linux, Piper can also be installed system-wide or symlinked directly into your `$PATH`.
 
 ---
 
-### 6.4 Development Compilation & Execution
+### 7.5 Development & Hybrid GPU Execution
 
-Clone the repository and install frontend dependencies:
+Clone the repository and install dependencies:
 ```bash
 # 1. Clone the repository
 git clone https://github.com/Koundinya-Git/omni-dashboard.git
 cd omni-dashboard
 
-# If working on the dedicated Linux branch:
-git checkout for-linux
-
 # 2. Install web dependencies
 npm install
 ```
 
-#### Running on Hybrid Graphics (Optimus / PRIME Laptops):
-On dual-GPU laptops (Intel/AMD iGPU + NVIDIA dGPU):
-* **Recommended:** Launch standard development mode:
+#### Running on Dual-GPU / Optimus Laptops:
+* **Recommended Workflow:** Run development mode normally:
   ```bash
   npm run tauri dev
   ```
-  This runs the WebKitGTK user interface smoothly on the battery-efficient integrated GPU, while the background Ollama CUDA daemon utilizes 100% of your NVIDIA dGPU for inference.
-* **Running with PRIME Render Offload:**
+  The Tauri WebKitGTK/WebView2 interface renders smoothly on your battery-efficient integrated GPU, while Ollama utilizes 100% of your dedicated NVIDIA GPU for inference.
+* **Running with PRIME Render Offload (`prime-run` on Linux):**
   ```bash
   prime-run npm run tauri dev
   ```
-  Omni-Dashboard automatically detects `__NV_PRIME_RENDER_OFFLOAD=1` and sets `WEBKIT_DISABLE_DMABUF_RENDERER=1` to prevent Wayland compositor DMA-BUF protocol errors.
+  Omni-Dashboard automatically detects `__NV_PRIME_RENDER_OFFLOAD=1` and sets `WEBKIT_DISABLE_DMABUF_RENDERER=1` in `src-tauri/src/main.rs`, preventing WebKitGTK Wayland protocol crashes.
 
 ---
 
-### 6.5 Production Package & Binary Compilation
+### 7.6 Production Release Packaging
 
-To build standalone release packages:
+To compile release binaries:
 
-#### On Linux:
+#### Linux:
 ```bash
 npm run tauri build
 ```
-Generates `.AppImage` and `.deb` binaries under `src-tauri/target/release/bundle/`.
+Generates `.AppImage` and `.deb` packages in `src-tauri/target/release/bundle/`.
 
-#### On Windows:
-```bash
+#### Windows:
+```powershell
 npm run tauri build
 ```
-Generates standalone `.exe` and `.msi` installers under `src-tauri\target\release\bundle\`.
+Generates `.msi` and `.exe` standalone installers in `src-tauri\target\release\bundle\`.
 
 ---
 
-## 7. 🛠️ Troubleshooting & Hardware Acceleration Notes
+## 8. 🛠️ Troubleshooting & Operational Notes
 
-### NVIDIA dGPU Not Being Used by Ollama (Arch Linux)
-* **Symptom:** AI responses are slow; `nvidia-smi` shows 0MB VRAM used by `ollama_llama_server`.
-* **Cause:** Arch Linux's default `extra/ollama` package is compiled for CPU only.
-* **Fix:** Install `sudo pacman -S ollama-cuda`. Then restart the service: `sudo systemctl restart ollama` or `ollama serve`. Verify via `nvidia-smi` during a chat query.
+### Ollama Not Utilizing NVIDIA GPU (Arch Linux)
+* **Symptom:** Text generation is slow; `nvidia-smi` displays 0MB allocated by `ollama_llama_server`.
+* **Fix:** Install the CUDA-enabled build via `sudo pacman -S ollama-cuda`, then restart the daemon: `sudo systemctl restart ollama` or `ollama serve`.
 
-### WebKitGTK Wayland Protocol Error 71 with `prime-run`
-* **Symptom:** Application crashes at startup with `Gdk-Message: Error 71 (Protocol error) dispatching to Wayland display`.
-* **Cause:** WebKitGTK DMA-BUF rendering conflict with NVIDIA proprietary drivers under Wayland.
-* **Fix:** Omni-Dashboard contains a built-in guard in `src-tauri/src/main.rs`. Alternatively, launch without `prime-run` (Tauri UI on iGPU, Ollama on dGPU), or set:
+### WebKitGTK Protocol Error 71 on Wayland
+* **Symptom:** App crashes on startup with `Gdk-Message: Error 71 (Protocol error) dispatching to Wayland display`.
+* **Fix:** Occurs when running WebKitGTK under Wayland with NVIDIA DMA-BUF hardware acceleration. Omni-Dashboard contains a built-in guard, or you can export manually:
   ```bash
   export WEBKIT_DISABLE_DMABUF_RENDERER=1
   npm run tauri dev
   ```
 
-### Music Player Fails to Download or Play (Linux)
-* **Symptom:** YouTube download errors out or audio does not play.
-* **Cause:** Missing `yt-dlp`, `ffmpeg`, or GStreamer plugins.
-* **Fix:** Ensure all GStreamer codecs and `yt-dlp` are present:
-  ```bash
-  sudo pacman -S yt-dlp ffmpeg gst-plugins-base gst-plugins-good gst-plugins-bad gst-libav pipewire-pulse
-  ```
+### Music Player Download or Playback Failure
+* **Fix:** Ensure both `yt-dlp` and `ffmpeg` are in your system `$PATH`. On Linux, verify that all GStreamer plugins (`gst-plugins-base`, `gst-plugins-good`, `gst-plugins-bad`, `gst-libav`) and `pipewire-pulse` are installed.
 
-### Screen Capture Not Working on Wayland
-* **Cause:** Missing Wayland screen capture utility.
-* **Fix:** Install `grim` (`sudo pacman -S grim`). On X11, install `scrot` or `imagemagick`.
-
-### Full Factory Reset Procedure
-* If you ever wish to completely wipe the local database and reset Omni-Core to a brand new out-of-the-box state, navigate to **Settings $\to$ Danger Zone $\to$ Full Factory Reset**. This drops all 20 tables, wipes temporary memory stores, cleans audio caches, vacuums storage, and reinitializes fresh defaults safely.
+### Screen Capture Permissions on Wayland
+* **Fix:** Install `grim` (`sudo pacman -S grim`) for native Wayland compositor screenshotting. On X11 sessions, install `scrot` or `imagemagick`.
 
 ---
-## 8. Images of Project:
+
+## 9. 📸 Application Showcase & Gallery
 
 <img width="1917" height="1078" alt="image" src="https://github.com/user-attachments/assets/25d964e7-f354-49ac-b554-326898aeff77" />
 
@@ -633,9 +712,12 @@ Generates standalone `.exe` and `.msi` installers under `src-tauri\target\releas
 <img width="1917" height="1078" alt="image" src="https://github.com/user-attachments/assets/4a983481-e44f-4330-bdc4-65030b3a1419" />
 
 ---
-## 9. License & Terms of Use
 
-This project is open-source software licensed under the **GNU General Public License v3 (GPLv3)** with explicit additional terms as permitted under **GPLv3 Section 7**. Please refer to `Terms_and_Conditions.md` for complete legal definitions and liability waivers regarding AI hallucination, database management, and active telemetry tracking. By using, cloning, or compiling this application, you explicitly agree to the said Terms and Conditions in the `Terms_and_Conditions.md` file.
+## 10. 📜 License & Terms of Use
+
+This project is licensed under the **GNU General Public License v3 (GPLv3)** with explicit additional terms as permitted under **GPLv3 Section 7**. 
+
+Please refer to [`Terms_and_Conditions.md`](file:///home/koundinyag/omni-dashboard/Terms_and_Conditions.md) for legal definitions, acceptable use boundaries, and liability waivers regarding AI-generated output, hardware strain, and local database operations. By cloning, compiling, or running this application, you agree to these Terms and Conditions.
 
 ```text
 GNU GENERAL PUBLIC LICENSE
@@ -654,7 +736,7 @@ ADDITIONAL TERMS UNDER GPLv3 SECTION 7
    the phrase "Omni-Dashboard" within its primary title, binary name, package 
    metadata, and naming identifiers.
 
-2. Visible User-Facing Attribution (§7b):
+2. Visible User-Facing Attribution (Section 7b):
    Distributors and developers of modified versions must preserve and display 
    clear, noticeable attribution to the original creator (Koundinya Gajulapalli) and provide 
    a direct link to the original repository within the user-facing interface 
@@ -662,4 +744,4 @@ ADDITIONAL TERMS UNDER GPLv3 SECTION 7
 ```
 
 ---
-*Omni-Core Architecture Engine • Designed for Local Sovereignty and Maximum Student Discipline*
+*Omni-Core Architecture Engine • Designed for Local Data Sovereignty and Deep Focus*
