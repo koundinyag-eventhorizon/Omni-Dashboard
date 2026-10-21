@@ -6,7 +6,7 @@ use std::io::BufReader;
 use std::io::Write;
 use std::process::{Command, Stdio};
 use std::sync::mpsc::{self, Sender};
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 use std::thread;
 use sysinfo::System;
 use tauri::{
@@ -25,11 +25,11 @@ use std::os::windows::process::CommandExt;
 fn apply_hidden_flag(cmd: &mut Command) {
     #[cfg(target_os = "windows")]
     {
-        cmd.creation_flags(0x08000000); 
+        cmd.creation_flags(0x08000000);
     }
     #[cfg(not(target_os = "windows"))]
     {
-        let _ = cmd; 
+        let _ = cmd;
     }
 }
 
@@ -42,9 +42,7 @@ pub enum AudioCommand {
 
 pub struct AudioState(pub Mutex<Sender<AudioCommand>>);
 
-fn init_db() -> SqlResult<Connection> {
-    let conn = Connection::open("omni_core.db")?;
-
+fn create_tables(conn: &Connection) -> SqlResult<()> {
     conn.execute(
         "CREATE TABLE IF NOT EXISTS tasks (
             id TEXT PRIMARY KEY,
@@ -294,6 +292,12 @@ fn init_db() -> SqlResult<Connection> {
         [],
     );
 
+    Ok(())
+}
+
+fn init_db() -> SqlResult<Connection> {
+    let conn = Connection::open("omni_core.db")?;
+    create_tables(&conn)?;
     Ok(conn)
 }
 
@@ -769,6 +773,61 @@ fn save_settings(db: State<'_, DbState>, settings: UserSettings) -> Result<(), S
         .map_err(|e| e.to_string())?;
     }
 
+    Ok(())
+}
+
+#[tauri::command]
+fn factory_reset(app: tauri::AppHandle, db: State<'_, DbState>) -> Result<(), String> {
+    let conn = db.0.lock().map_err(|e| e.to_string())?;
+
+    let tables = [
+        "tasks",
+        "notes",
+        "courses",
+        "workspaces",
+        "chat_sessions",
+        "chats",
+        "settings",
+        "focus_sessions",
+        "playlists",
+        "offline_songs",
+        "textbooks",
+        "textbook_pages",
+        "book_sets",
+        "book_set_items",
+        "calendar_events",
+        "immutable_telemetry",
+        "live_memory_summaries",
+        "goals",
+        "flashcard_decks",
+        "flashcards",
+    ];
+
+    for table in tables {
+        let sql = format!("DROP TABLE IF EXISTS {}", table);
+        let _ = conn.execute(&sql, []);
+    }
+
+    let _ = conn.execute("VACUUM", []);
+
+    // Also clear memory captures from omni_memory.db in temp directory
+    let mem_db_path = std::env::temp_dir().join("omni_memory.db");
+    if mem_db_path.exists() {
+        let _ = std::fs::remove_file(&mem_db_path);
+    }
+
+    // Clean up cached downloaded music if directory exists
+    if let Ok(app_data) = app.path().app_data_dir() {
+        let music_dir = app_data.join("music_cache");
+        if music_dir.exists() {
+            let _ = std::fs::remove_dir_all(&music_dir);
+        }
+    }
+
+    // Re-initialize tables and default settings in omni_core.db
+    create_tables(&conn).map_err(|e| e.to_string())?;
+
+    println!("🚨 [FACTORY RESET] All databases wiped and reset to factory defaults!");
     Ok(())
 }
 
@@ -2157,8 +2216,15 @@ fn read_aloud(
     };
 
     let base_dir = std::env::current_dir().map_err(|e| e.to_string())?;
-    let mut model_path = base_dir
-        .join("piper")
+    let piper_base = if base_dir.join("piper").exists() {
+        base_dir.join("piper")
+    } else if base_dir.join("src-tauri").join("piper").exists() {
+        base_dir.join("src-tauri").join("piper")
+    } else {
+        base_dir.join("piper")
+    };
+
+    let mut model_path = piper_base
         .join("voices")
         .join(format!("{}.onnx", target_voice));
 
@@ -2167,23 +2233,31 @@ fn read_aloud(
             "[AUDIO WARNING] Voice {} not found, falling back to ryan-high",
             target_voice
         );
-        model_path = base_dir
-            .join("piper")
+        model_path = piper_base
             .join("voices")
             .join("en_US-ryan-high.onnx");
     }
 
     let length_scale = 200.0 / wpm;
-    let piper_cwd = base_dir.join("piper").join("piper");
+    let piper_cwd = piper_base.join("piper");
 
     #[cfg(target_os = "windows")]
     let exe_path = piper_cwd.join("piper.exe");
     #[cfg(not(target_os= "windows"))]
-    let exe_path = piper_cwd.join("piper");
+    let exe_path = if piper_cwd.join("piper").exists() {
+        piper_cwd.join("piper")
+    } else {
+        std::path::PathBuf::from("piper")
+    };
     let output_path = std::env::temp_dir().join("omni_core_tts_temp.wav");
 
+    #[cfg(target_os = "windows")]
     if !exe_path.exists() {
         return Err("piper.exe not found".into());
+    }
+    #[cfg(not(target_os = "windows"))]
+    if !exe_path.exists() && Command::new("piper").arg("--help").output().is_err() {
+        return Err("piper binary not found. Please install piper or place it in src-tauri/piper/piper/piper".into());
     }
     if !model_path.exists() {
         return Err("Voice model not found. Did you download the .onnx files?".into());
@@ -2228,14 +2302,34 @@ fn stop_reading(state: State<'_, AudioState>) -> Result<(), String> {
     Ok(())
 }
                                                                                
+fn has_low_vram_gpu() -> bool {
+    if let Ok(output) = Command::new("nvidia-smi")
+        .args(&["--query-gpu=memory.total", "--format=csv,noheader,nounits"])
+        .output() 
+    {
+        if output.status.success() {
+            let out_str = String::from_utf8_lossy(&output.stdout);
+            if let Some(first_line) = out_str.lines().next() {
+                if let Ok(total_mb) = first_line.trim().parse::<u64>() {
+                    return total_mb <= 3072; // <= 3GB VRAM (e.g. 2GB GeForce MX450)
+                }
+            }
+        }
+    }
+    false
+}
+
 fn get_model_config(tier: &str) -> (&'static str, usize) {
+    // If GPU has <= 2-3GB VRAM, a 16k context window forces Ollama to fall back
+    // to CPU because KV cache exceeds available VRAM. 4096 tokens fits inside 2GB.
+    let ctx_size = if has_low_vram_gpu() { 4096 } else { 16384 };
     match tier {
-        "General" => ("llama3.2:3b", 16384),
-        "Coding" => ("qwen2.5-coder:3b", 16384),
-        "Performance" => ("phi4-mini:latest", 16384),
-        "RAG" => ("nemotron-mini:latest", 16384),
-        "Vision" => ("qwen3.5:4b", 16384),
-        _ => ("llama3.2:3b", 16384),
+        "General" => ("llama3.2:3b", ctx_size),
+        "Coding" => ("qwen2.5-coder:3b", ctx_size),
+        "Performance" => ("phi4-mini:latest", ctx_size),
+        "RAG" => ("nemotron-mini:latest", ctx_size),
+        "Vision" => ("qwen3.5:4b", ctx_size),
+        _ => ("llama3.2:3b", ctx_size),
     }
 }
 fn get_system_prompt(persona: &str) -> &'static str {
@@ -2277,9 +2371,12 @@ async fn flush_vram(model_tier: String) -> Result<(), String> {
 fn get_telemetry() -> Result<serde_json::Value, String> {
     let mut sys = System::new_all();
     sys.refresh_memory();
+    sys.refresh_cpu_usage();
     
     let total_ram = sys.total_memory();
     let used_ram = sys.used_memory();
+    let cpu_count = sys.cpus().len();
+    let global_cpu = sys.global_cpu_usage();
     
     let percent = if total_ram > 0 {
         (used_ram as f64 / total_ram as f64) * 100.0
@@ -2289,11 +2386,51 @@ fn get_telemetry() -> Result<serde_json::Value, String> {
     
     let total_gb = total_ram as f64 / 1_073_741_824.0;
     let used_gb = used_ram as f64 / 1_073_741_824.0;
+
+    let mut gpu_name = String::from("No Dedicated GPU");
+    let mut vram_total_str = String::from("0 MB");
+    let mut vram_used_str = String::from("0 MB");
+    let mut vram_percent = 0.0f64;
+    let mut gpu_util_str = String::from("0%");
+    let mut has_gpu = false;
+
+    if let Ok(output) = Command::new("nvidia-smi")
+        .args(&["--query-gpu=memory.total,memory.used,utilization.gpu,name", "--format=csv,noheader,nounits"])
+        .output() 
+    {
+        if output.status.success() {
+            let out_str = String::from_utf8_lossy(&output.stdout);
+            if let Some(first_line) = out_str.lines().next() {
+                let parts: Vec<&str> = first_line.split(',').map(|s| s.trim()).collect();
+                if parts.len() >= 4 {
+                    let total_mb: u64 = parts[0].parse().unwrap_or(0);
+                    let used_mb: u64 = parts[1].parse().unwrap_or(0);
+                    let util: f64 = parts[2].parse().unwrap_or(0.0);
+                    gpu_name = parts[3].to_string();
+                    vram_total_str = format!("{} MB", total_mb);
+                    vram_used_str = format!("{} MB", used_mb);
+                    gpu_util_str = format!("{:.0}%", util);
+                    if total_mb > 0 {
+                        vram_percent = (used_mb as f64 / total_mb as f64) * 100.0;
+                        has_gpu = true;
+                    }
+                }
+            }
+        }
+    }
     
     Ok(serde_json::json!({
         "ram_total": format!("{:.2} GB", total_gb),
         "ram_used": format!("{:.2} GB", used_gb),
-        "ram_percent": percent
+        "ram_percent": percent,
+        "has_gpu": has_gpu,
+        "gpu_name": gpu_name,
+        "vram_total": vram_total_str,
+        "vram_used": vram_used_str,
+        "vram_percent": vram_percent,
+        "gpu_util": gpu_util_str,
+        "cpu_count": cpu_count,
+        "cpu_usage": format!("{:.1}%", global_cpu),
     }))
 }
 fn fetch_web_snippets(query: &str) -> String {
@@ -2301,7 +2438,7 @@ fn fetch_web_snippets(query: &str) -> String {
     let search_url = format!("https://{}/lite/", ddg_host);
 
     let req = ureq::post(&search_url)
-        .set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0.0.0 Safari/537.36")
+        .set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
         .timeout(std::time::Duration::from_secs(5))
         .send_form(&[("q", query)]);
 
@@ -2678,35 +2815,75 @@ async fn capture_screen() -> Result<String, String> {
     let temp_path = std::env::temp_dir().join("omni_screen_capture.png");
     let path_str = temp_path.to_string_lossy().to_string();
 
-    // PowerShell script that captures screen AND downscales to max 1024px width to save VRAM
-    let ps_script = format!(
-        "Add-Type -AssemblyName System.Windows.Forms,System.Drawing; \
-         $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds; \
-         $bmp = New-Object System.Drawing.Bitmap $screen.Width, $screen.Height; \
-         $gfx = [System.Drawing.Graphics]::FromImage($bmp); \
-         $gfx.CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size); \
-         $maxW = 480; \
-         if ($bmp.Width -gt $maxW) {{ \
-             $maxH = [int]($bmp.Height * ($maxW / $bmp.Width)); \
-             $resized = New-Object System.Drawing.Bitmap $maxW, $maxH; \
-             $g2 = [System.Drawing.Graphics]::FromImage($resized); \
-             $g2.DrawImage($bmp, 0, 0, $maxW, $maxH); \
-             $g2.Dispose(); \
-             $bmp.Dispose(); \
-             $bmp = $resized; \
-         }} \
-         $bmp.Save('{}', [System.Drawing.Imaging.ImageFormat]::Png); \
-         $gfx.Dispose(); $bmp.Dispose();",
-        path_str.replace("\\", "/")
-    );
+    #[cfg(target_os = "windows")]
+    {
+        let ps_script = format!(
+            "Add-Type -AssemblyName System.Windows.Forms,System.Drawing; \
+             $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds; \
+             $bmp = New-Object System.Drawing.Bitmap $screen.Width, $screen.Height; \
+             $gfx = [System.Drawing.Graphics]::FromImage($bmp); \
+             $gfx.CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size); \
+             $maxW = 480; \
+             if ($bmp.Width -gt $maxW) {{ \
+                 $maxH = [int]($bmp.Height * ($maxW / $bmp.Width)); \
+                 $resized = New-Object System.Drawing.Bitmap $maxW, $maxH; \
+                 $g2 = [System.Drawing.Graphics]::FromImage($resized); \
+                 $g2.DrawImage($bmp, 0, 0, $maxW, $maxH); \
+                 $g2.Dispose(); \
+                 $bmp.Dispose(); \
+                 $bmp = $resized; \
+             }} \
+             $bmp.Save('{}', [System.Drawing.Imaging.ImageFormat]::Png); \
+             $gfx.Dispose(); $bmp.Dispose();",
+            path_str.replace("\\", "/")
+        );
 
-    let mut cmd = Command::new("powershell");
-    cmd.args(&["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", &ps_script]);
-    apply_hidden_flag(&mut cmd);
+        let mut cmd = Command::new("powershell");
+        cmd.args(&["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", &ps_script]);
+        apply_hidden_flag(&mut cmd);
 
-    let output = cmd.output().map_err(|e| format!("Screenshot failed: {}", e))?;
-    if !output.status.success() {
-        return Err("PowerShell failed to capture screen".into());
+        let output = cmd.output().map_err(|e| format!("Screenshot failed: {}", e))?;
+        if !output.status.success() {
+            return Err("PowerShell failed to capture screen".into());
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        // Try grim (Wayland) first, then fall back to scrot (X11), then import (ImageMagick)
+        let result = Command::new("grim")
+            .arg(&path_str)
+            .output();
+
+        let captured = match result {
+            Ok(output) if output.status.success() => true,
+            _ => {
+                let scrot_result = Command::new("scrot")
+                    .arg(&path_str)
+                    .output();
+                match scrot_result {
+                    Ok(output) if output.status.success() => true,
+                    _ => {
+                        let import_result = Command::new("import")
+                            .args(&["-window", "root", &path_str])
+                            .output();
+                        match import_result {
+                            Ok(output) if output.status.success() => true,
+                            _ => false,
+                        }
+                    }
+                }
+            }
+        };
+
+        if !captured {
+            return Err("Screen capture failed. Install one of: grim (Wayland), scrot (X11), or imagemagick (import).".into());
+        }
+
+        // Downscale to max 480px width using ImageMagick convert (if available)
+        let _ = Command::new("convert")
+            .args(&[&path_str, "-resize", "480x>", &path_str])
+            .output();
     }
 
     let bytes = std::fs::read(&temp_path).map_err(|e| e.to_string())?;
@@ -2717,7 +2894,18 @@ async fn capture_screen() -> Result<String, String> {
 }
                                                                                                          
 fn main() {
-                                                                                            
+    #[cfg(target_os = "linux")]
+    {
+        // Fix WebKitGTK crash on Linux Wayland with NVIDIA ("Error 71 dispatching to Wayland display")
+        if std::env::var("WEBKIT_DISABLE_DMABUF_RENDERER").is_err() {
+            std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+        }
+        // If launched via prime-run under Wayland, route through XWayland to avoid EGL protocol crashes
+        if std::env::var("__NV_PRIME_RENDER_OFFLOAD").is_ok() && std::env::var("GDK_BACKEND").is_err() {
+            std::env::set_var("GDK_BACKEND", "x11,wayland");
+        }
+    }
+
     let db_conn = init_db().expect("Failed to initialize SQLite database");
                                                                                            
     let (audio_tx, audio_rx) = mpsc::channel::<AudioCommand>();
@@ -2836,12 +3024,15 @@ fn main() {
                             if is_meeting && auto_record_enabled && !is_recording_meeting {
                                 println!("[WHISPER] Meeting detected! Initiating silent audio capture...");
                                 is_recording_meeting = true;
- 
-                                if let Ok(child) = std::process::Command::new("ffmpeg")
-                                    .args(&["-f", "dshow", "-i", "audio=Stereo Mix", "-y", "temp_meeting.wav"])
-                                    .creation_flags(0x08000000) 
-                                    .spawn() 
-                                {
+
+                                let mut ffmpeg_cmd = std::process::Command::new("ffmpeg");
+                                #[cfg(target_os = "windows")]
+                                ffmpeg_cmd.args(&["-f", "dshow", "-i", "audio=Stereo Mix", "-y", "temp_meeting.wav"]);
+                                #[cfg(not(target_os = "windows"))]
+                                ffmpeg_cmd.args(&["-f", "pulse", "-i", "default", "-y", "temp_meeting.wav"]);
+                                apply_hidden_flag(&mut ffmpeg_cmd);
+
+                                if let Ok(child) = ffmpeg_cmd.spawn() {
                                     ffmpeg_child = Some(child);
                                 } else {
                                     println!("[WHISPER WARNING] Failed to start ffmpeg. Is it installed?");
@@ -2857,14 +3048,28 @@ fn main() {
                                 }
                                 
                                 let base_dir = std::env::current_dir().unwrap_or_default();
-                                let whisper_exe = base_dir.join("whisper").join("main.exe");
-                                let model_path = base_dir.join("whisper").join("ggml-base.en.bin");
+                                let whisper_dir = if base_dir.join("whisper").exists() {
+                                    base_dir.join("whisper")
+                                } else if base_dir.join("src-tauri").join("whisper").exists() {
+                                    base_dir.join("src-tauri").join("whisper")
+                                } else {
+                                    base_dir.join("whisper")
+                                };
+                                #[cfg(target_os = "windows")]
+                                let whisper_exe = whisper_dir.join("main.exe");
+                                #[cfg(not(target_os = "windows"))]
+                                let whisper_exe = if whisper_dir.join("main").exists() {
+                                    whisper_dir.join("main")
+                                } else {
+                                    std::path::PathBuf::from("whisper-cli")
+                                };
+                                let model_path = whisper_dir.join("ggml-base.en.bin");
                                 
-                                if whisper_exe.exists() && model_path.exists() {
-                                    let whisper_res = std::process::Command::new(&whisper_exe)
-                                        .args(&["-m", model_path.to_str().unwrap(), "-f", "temp_meeting.wav", "-otxt"])
-                                        .creation_flags(0x08000000)
-                                        .output();
+                                if (whisper_exe.exists() || (!cfg!(target_os = "windows") && Command::new(&whisper_exe).arg("--help").output().is_ok())) && model_path.exists() {
+                                    let mut whisper_cmd = std::process::Command::new(&whisper_exe);
+                                    whisper_cmd.args(&["-m", model_path.to_str().unwrap(), "-f", "temp_meeting.wav", "-otxt"]);
+                                    apply_hidden_flag(&mut whisper_cmd);
+                                    let whisper_res = whisper_cmd.output();
                                         
                                     if whisper_res.is_ok() {
                                         let txt_file = "temp_meeting.wav.txt";
@@ -2884,7 +3089,10 @@ fn main() {
                                         }
                                     }
                                 } else {
-                                    println!("[WHISPER WARNING] whisper/main.exe or ggml-base.en.bin not found in src-tauri.");
+                                    #[cfg(target_os = "windows")]
+                                    println!("[WHISPER WARNING] whisper/main.exe or ggml-base.en.bin not found.");
+                                    #[cfg(not(target_os = "windows"))]
+                                    println!("[WHISPER WARNING] whisper/main or ggml-base.en.bin not found.");
                                 }
                             }
                         }
@@ -2997,6 +3205,7 @@ fn main() {
             extract_text_from_file,
             kill_process_and_yell, //HEHE, use and find out lmao
             capture_screen,
+            factory_reset,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

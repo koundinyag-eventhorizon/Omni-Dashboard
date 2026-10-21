@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { invoke, convertFileSrc } from '@tauri-apps/api/core';
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -22,7 +22,7 @@ import {
   AlertTriangle, Library, FileUp, Clock, Users, Palmtree, AlertCircle, ChevronLeft, MapPin, AlignLeft,
   BarChart3, Brain, Info, Star
 } from 'lucide-react';
-interface SystemStats { ram_total: string; ram_used: string; ram_percent: number; }
+interface SystemStats { ram_total: string; ram_used: string; ram_percent: number; has_gpu?: boolean; gpu_name?: string; vram_total?: string; vram_used?: string; vram_percent?: number; gpu_util?: string; cpu_count?: number; cpu_usage?: string; }
 interface ChatMessage { role: 'user' | 'ai'; content: string; isError?: boolean; }
 interface DbChatMessage { id: string; session_id: string; role: string; content: string; timestamp: number; }
 interface Task { id: string; title: string; quadrant: 1 | 2 | 3 | 4; completed: boolean; }
@@ -325,6 +325,23 @@ export default function App() {
   const showPrompt = (title: string, defaultValue: string = '', placeholder?: string): Promise<string | null> => new Promise((resolve) => setDialog({ isOpen: true, type: 'prompt', title, value: defaultValue, placeholder, resolvePrompt: resolve }));
   const handleDialogConfirm = () => { if (dialog.type === 'prompt' && dialog.resolvePrompt) dialog.resolvePrompt(dialog.value); if (dialog.type === 'confirm' && dialog.resolveConfirm) dialog.resolveConfirm(true); setDialog({ ...dialog, isOpen: false }); };
   const handleDialogCancel = () => { if (dialog.type === 'prompt' && dialog.resolvePrompt) dialog.resolvePrompt(null); if (dialog.type === 'confirm' && dialog.resolveConfirm) dialog.resolveConfirm(false); setDialog({ ...dialog, isOpen: false }); };
+
+  const handleFactoryReset = async () => {
+    const confirmed = await showConfirm(
+      "DANGER: Full Factory Reset",
+      "This will permanently erase ALL your tasks, notes, courses, chat history, textbooks, telemetry, and settings. Omni-Dashboard will be reset to its initial factory state. Are you sure you want to proceed?"
+    );
+    if (!confirmed) return;
+
+    try {
+      await invoke('factory_reset');
+      setIsSettingsOpen(false);
+      window.location.reload();
+    } catch (e) {
+      console.error("Factory reset failed:", e);
+      alert("Factory reset failed: " + e);
+    }
+  };
 
   const initSpeechRecognition = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -2278,11 +2295,47 @@ const messagePayload = newHistory.map((msg, index) => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mt-6">
-                   <div className="bg-[#171717]/50 border border-gray-800/50 rounded-2xl p-6 flex flex-col items-center justify-center text-gray-600 border-dashed">
-                      <BrainCircuit className="w-8 h-8 mb-2 opacity-50" /><span className="text-xs font-mono uppercase tracking-widest">GPU VRAM Monitor (Pending)</span>
+                   <div className="bg-[#171717]/90 border border-gray-800 rounded-2xl p-6 flex flex-col justify-between">
+                      <div className="flex items-center justify-between">
+                         <div className="flex items-center space-x-3">
+                            <BrainCircuit className="w-6 h-6 text-emerald-400" />
+                            <div>
+                               <p className="text-sm font-semibold text-gray-200">{telemetryData.gpu_name || 'Dedicated GPU'}</p>
+                               <p className="text-xs text-gray-500 font-mono">VRAM Allocation & Compute</p>
+                            </div>
+                         </div>
+                         <span className="text-xs font-mono px-2 py-0.5 rounded bg-gray-800 text-emerald-400 font-bold">{telemetryData.gpu_util || '0%'} UTIL</span>
+                      </div>
+                      <div className="mt-4">
+                         <div className="flex justify-between items-center text-xs font-mono mb-1 text-gray-400">
+                            <span>VRAM Used: {telemetryData.vram_used || '0 MB'}</span>
+                            <span>{telemetryData.vram_total || '0 MB'}</span>
+                         </div>
+                         <div className="w-full bg-[#212121] rounded-full h-3 overflow-hidden border border-gray-700">
+                            <div className="h-full rounded-full bg-emerald-500 transition-all duration-500" style={{ width: `${Math.min(telemetryData.vram_percent || 0, 100)}%` }} />
+                         </div>
+                      </div>
                    </div>
-                   <div className="bg-[#171717]/50 border border-gray-800/50 rounded-2xl p-6 flex flex-col items-center justify-center text-gray-600 border-dashed">
-                      <Activity className="w-8 h-8 mb-2 opacity-50" /><span className="text-xs font-mono uppercase tracking-widest">CPU Threads (Pending)</span>
+                   <div className="bg-[#171717]/90 border border-gray-800 rounded-2xl p-6 flex flex-col justify-between">
+                      <div className="flex items-center justify-between">
+                         <div className="flex items-center space-x-3">
+                            <Activity className="w-6 h-6 text-blue-400" />
+                            <div>
+                               <p className="text-sm font-semibold text-gray-200">CPU Compute Activity</p>
+                               <p className="text-xs text-gray-500 font-mono">{telemetryData.cpu_count || 4} Hardware Threads</p>
+                            </div>
+                         </div>
+                         <span className="text-xs font-mono px-2 py-0.5 rounded bg-gray-800 text-blue-400 font-bold">{telemetryData.cpu_usage || '0%'} LOAD</span>
+                      </div>
+                      <div className="mt-4">
+                         <div className="flex justify-between items-center text-xs font-mono mb-1 text-gray-400">
+                            <span>Overall Utilization</span>
+                            <span>{telemetryData.cpu_usage || '0%'}</span>
+                         </div>
+                         <div className="w-full bg-[#212121] rounded-full h-3 overflow-hidden border border-gray-700">
+                            <div className="h-full rounded-full bg-blue-500 transition-all duration-500" style={{ width: `${telemetryData.cpu_usage || '0%'}` }} />
+                         </div>
+                      </div>
                    </div>
                 </div>
               </div>
@@ -2877,6 +2930,26 @@ const messagePayload = newHistory.map((msg, index) => {
                   <span>0.25x (50)</span>
                   <span>Normal (200)</span>
                   <span>3.0x (600)</span>
+                </div>
+              </div>
+
+              {/* --- DANGER ZONE: FACTORY RESET --- */}
+              <div className="flex flex-col gap-3 p-4 bg-red-950/20 border border-red-900/40 rounded-xl mt-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col pr-4">
+                    <span className="text-sm font-bold text-red-400 flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-red-500" /> Full Factory Reset
+                    </span>
+                    <span className="text-xs text-gray-500 mt-1 leading-relaxed">
+                      Permanently wipes the entire SQLite database (tasks, notes, courses, chats, telemetry, textbooks, and memory).
+                    </span>
+                  </div>
+                  <button 
+                    onClick={handleFactoryReset}
+                    className="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-xl text-xs font-semibold tracking-wider uppercase transition-colors shrink-0 shadow-lg shadow-red-950/40 cursor-pointer"
+                  >
+                    Reset Everything
+                  </button>
                 </div>
               </div>
             </div>

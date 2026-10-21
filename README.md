@@ -388,22 +388,53 @@ Don't panic if you saw the code, and were like nahh. Setting this up requires a 
 
 ### 6.1 Host System Prerequisites
 Omni-Core compiles directly against your computer's operating system. You need to install these foundational tools:
-* **Node.js:** (Version 18 or higher). This runs the user interface.
-* **Rust Toolchain:** Install via `rustup`. This is the language the heavy-lifting engine is written in.
-* **C++ Build Tools:** If you are on Windows, download the *Visual Studio Build Tools* and check the box that says "Desktop development with C++". This is strictly required for your computer to understand the audio engines.
-* **Git LFS:** Required to download the massive AI voice files.
-
-```bash
-# Open your terminal and type this to initialize Git LFS before cloning
-git lfs install
-```
+* **Node.js:** (Version 18 or higher, e.g., `sudo pacman -S nodejs npm`). This runs the user interface.
+* **Rust Toolchain:** Install via `rustup` (`sudo pacman -S rustup && rustup default stable`). This is the language the heavy-lifting engine is written in.
+* **Linux (Arch Linux) System Packages:**
+  ```bash
+  sudo pacman -S --needed \
+    base-devel \
+    webkit2gtk-4.1 \
+    gtk3 \
+    libsoup3 \
+    libappindicator-gtk3 \
+    gst-plugins-base \
+    gst-plugins-good \
+    gst-plugins-bad \
+    gst-libav \
+    openssl \
+    curl \
+    wget \
+    ffmpeg \
+    yt-dlp \
+    grim \
+    scrot \
+    imagemagick
+  ```
+* **NVIDIA GPU Acceleration (Arch Linux):**
+  If using an NVIDIA dGPU (e.g. GeForce MX450, GTX, RTX), install CUDA support for Ollama:
+  ```bash
+  sudo pacman -S ollama-cuda nvidia-prime
+  ```
+  *(To render the GUI on the discrete GPU on hybrid laptops, launch with `prime-run`)*
+* **Audio Server:** PulseAudio or PipeWire with PulseAudio compatibility layer (`pipewire-pulse`).
+* **Git LFS:** Required to download the AI voice files:
+  ```bash
+  sudo pacman -S git-lfs
+  git lfs install
+  ```
+* **C++ Build Tools (Windows Only):** If you are on Windows, download the *Visual Studio Build Tools* and check the box that says "Desktop development with C++". This is strictly required for your computer to understand the audio engines.
 
 ---
 
 ### 6.2 Ollama Environment Setup
-[Ollama](https://ollama.com/) is the tool that lets you run large language models on your laptop without the internet. Install it, open your terminal, and pre-fetch the specific AI brains Omni-Core uses:
+[Ollama](https://ollama.com/) is the tool that lets you run large language models on your laptop without the internet. Install `ollama-cuda` (for NVIDIA GPUs), start the service, and pre-fetch the specific AI models Omni-Core uses:
 
 ```bash
+# 1. Start the Ollama server
+ollama serve
+
+# 2. Pull the models
 # The General conversational brain (Fast reasoning)
 ollama pull llama3.2:3b
 
@@ -414,24 +445,29 @@ ollama pull qwen2.5-coder:3b
 ollama pull phi4-mini:latest
 
 # The Image Engine (For the image scanning, and Hotkey pullup)
-
-ollama pull qwen3.5:2b
+ollama pull qwen3.5:4b
 
 # The Textbook Scanner brain (Used for RAG and PDFs)
 ollama pull nemotron-mini:latest
+
+# Vector Embeddings engine (Required for PDF textbook search)
+ollama pull nomic-embed-text
 ```
 
 
 ---
 
 ### 6.3 Piper TTS Runtime Setup
-Verify the `piper` directory structure within the `src-tauri` folder. If the `.onnx` voice models are missing, you will need to download them from the Rhasspy Piper repository and place them inside the `voices` folder.
+Verify the `piper` directory structure within the `src-tauri` folder. On Arch Linux, you can either install piper system-wide (e.g., via AUR `piper-tts-bin`) or place the Linux `piper` executable in `src-tauri/piper/piper/piper`.
+
+If the `.onnx` voice models are missing, download them from the Rhasspy Piper voice repository and place them inside the `voices` folder.
 
 ```text
 src-tauri/
 └── piper/
     ├── piper/
-    │   └── piper.exe
+    │   ├── piper        # Linux executable (chmod +x)
+    │   └── piper.exe    # Windows executable
     └── voices/
         ├── en_US-ryan-high.onnx
         ├── en_US-amy-medium.onnx
@@ -446,7 +482,7 @@ Launch the application in development mode. The system handles hot-reloading (up
 
 ```bash
 # 1. Download the code to your computer
-git clone [https://github.com/Koundinya-Git/omni-dashboard.git](https://github.com/Koundinya-Git/omni-dashboard.git)
+git clone https://github.com/Koundinya-Git/omni-dashboard.git
 
 # 2. Enter the project folder
 cd omni-dashboard
@@ -460,21 +496,29 @@ npm run tauri dev
 
 ---
 
-### 6.5 Production Executable (.exe) Compilation
+### 6.5 Production Package & Binary Compilation
 
-If you want to create a normal `.exe` file that you can double click and run like a normal app (without opening the terminal):
+To build standalone release packages for Linux:
 
 ```bash
 npm run tauri build
 ```
 
-The system will compress everything and place your installer in: `src-tauri/target/release/bundle/msi/`. Or if you are too lazy, get our latest release binaries (.exe only though for now).
+Tauri compiles the binary and packages it in `src-tauri/target/release/bundle/` (such as `.AppImage` or `.deb`).
 
 ---
 
 ## 7. 🛠️ Troubleshooting & CS Engineering Notes
 
-### "link.exe not found" Error
+### WebKitGTK / Display Issues (Linux)
+* **Cause:** Missing WebKit2GTK libraries or running under pure Wayland without XWayland.
+* **Fix:** Ensure `webkit2gtk-4.1` and `gtk3` are installed (`sudo pacman -S webkit2gtk-4.1 gtk3`). For screen capture on Wayland, ensure `grim` is installed (`sudo pacman -S grim`). On X11, install `scrot` or `imagemagick`.
+
+### Audio Recording Not Working (Meeting Capture)
+* **Cause:** `ffmpeg` cannot find PulseAudio/PipeWire audio source.
+* **Fix:** Verify `pipewire-pulse` (or `pulseaudio`) is active. Test in terminal: `pactl info`.
+
+### "link.exe not found" Error (Windows only)
 * **Cause:** You skipped installing the MSVC C++ Build Tools in Step 6.1.
 * **Fix:** Open Visual Studio Installer -> Workloads -> Check "Desktop development with C++" -> Modify/Install.
 
