@@ -1,7 +1,7 @@
 # Omni-Dashboard (Omni-Core)
 
-[![Platform: Linux](https://img.shields.io/badge/Platform-Linux%20(X11%20%7C%20Wayland)-FCC624?logo=linux&logoColor=black)](https://github.com/Koundinya-Git/omni-dashboard)
-[![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6?logo=windows&logoColor=white)](https://github.com/Koundinya-Git/omni-dashboard)
+[![Platform: Linux](https://img.shields.io/badge/Platform-Linux%20(X11%20%7C%20Wayland)-FCC624?logo=linux&logoColor=black)](https://github.com/koundinyag-eventhorizon/Omni-Dashboard)
+[![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6?logo=windows&logoColor=white)](https://github.com/koundinyag-eventhorizon/Omni-Dashboard)
 [![Framework: Tauri v2](https://img.shields.io/badge/Framework-Tauri%20v2-24C8DB?logo=tauri&logoColor=white)](https://v2.tauri.app/)
 [![Backend: Rust](https://img.shields.io/badge/Backend-Rust%202021-DEA584?logo=rust&logoColor=black)](https://www.rust-lang.org/)
 [![Frontend: React + Vite](https://img.shields.io/badge/Frontend-React%2018%20%2B%20Vite%205-61DAFB?logo=react&logoColor=black)](https://vitejs.dev/)
@@ -16,7 +16,7 @@ Welcome to the edge of personal productivity. Omni-Dashboard provides an all-in-
 
 ## 📦 Precompiled Binaries & Official Releases
 
-If you don't want to install Node.js, Rust, or compile from source, standalone precompiled packages for **Windows** and **Linux** are available directly on the [**GitHub Releases**](https://github.com/Koundinya-Git/omni-dashboard/releases) page:
+If you don't want to install Node.js, Rust, or compile from source, standalone precompiled packages for **Windows** and **Linux** are available directly on the [**GitHub Releases**](https://github.com/koundinyag-eventhorizon/Omni-Dashboard/releases) page:
 
 | Operating System | Package Format | Installation / Execution Instructions |
 | :--- | :--- | :--- |
@@ -38,7 +38,7 @@ Get Omni-Dashboard up and running on your machine in three simple steps:
 ### 🐧 For Linux (Arch Linux / Ubuntu / Debian / Fedora)
 ```bash
 # 1. Clone repository & install dependencies
-git clone https://github.com/Koundinya-Git/omni-dashboard.git && cd omni-dashboard
+git clone https://github.com/koundinyag-eventhorizon/Omni-Dashboard.git && cd Omni-Dashboard
 
 # On Arch Linux:
 sudo pacman -S --needed base-devel webkit2gtk-4.1 gtk3 libsoup3 libappindicator-gtk3 gst-libav ffmpeg yt-dlp grim scrot ollama-cuda nodejs npm git-lfs
@@ -56,7 +56,7 @@ npm run tauri dev
 ```powershell
 # 1. Install prerequisites via winget & clone repository
 winget install Gyan.FFmpeg yt-dlp.yt-dlp Ollama.Ollama OpenJS.NodeJS.LTS
-git clone https://github.com/Koundinya-Git/omni-dashboard.git; cd omni-dashboard
+git clone https://github.com/koundinyag-eventhorizon/Omni-Dashboard.git; cd Omni-Dashboard
 
 # 2. Start Ollama and download the base conversational model
 ollama serve
@@ -810,8 +810,8 @@ src-tauri/
 Clone the repository and install dependencies:
 ```bash
 # 1. Clone the repository
-git clone https://github.com/Koundinya-Git/omni-dashboard.git
-cd omni-dashboard
+git clone https://github.com/koundinyag-eventhorizon/Omni-Dashboard.git
+cd Omni-Dashboard
 
 # 2. Install web dependencies
 npm install
